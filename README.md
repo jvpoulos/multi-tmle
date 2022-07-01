@@ -1,11 +1,5 @@
 # multi-tmle
-Replication files for the paper "Targeted learning in observational studies with multi‐level treatments: an evaluation of antipsychotic drug treatment safety for patients with serious mental illness"
-
-
-N.b.
-------
-
-The data provided for the empirical application is simulated, since we cannot provide the actual CMS data. Therefore, the replication code for the empirical application is not expected to reproduce the results in the paper. 
+Code and data accompanying the paper ["Targeted learning in observational studies with multi‐level treatments: an evaluation of antipsychotic drug treatment safety for patients with serious mental illness"](http://arxiv.org/abs/2206.15367). N.b.: The data provided for the empirical application is simulated, since we cannot provide the actual Medicare data, and are provided for illustrative purposes.
 
 Prerequsites
 ------
@@ -73,12 +67,12 @@ Instructions
 
 2. For simulations, run: `Rscript tmle_MultinomialTrts.R [arg1] [arg2] [arg3] [arg4]`; where `[arg1]` specifies the estimator ['tmle' or 'lmtp'],  `[arg2]` is a number specifying the simulation setting, `[arg3]`  is the outcome type ['binomial' or 'continuous'], and `[arg4]` is a logical flag if super learner estimation is to be used. E.g.,
 
-	Rscript tmle_MultinomialTrts.R 'tmle' 1 'binomial' 'TRUE'
+	`Rscript tmle_MultinomialTrts.R 'tmle' 1 'binomial' 'TRUE'`
 
 3. To plot simulation results, run: `Rscript package_list.R [arg1]`; where `[arg1]` specifies the output path of the simulation results. E.g., 
 	
-	Rscript package_list.R 'outputs/20220504'
+	`Rscript package_list.R 'outputs/20220504'`
 
 4. For ITT analysis on simulated data, run in bash script: `Rscript tmle_itt_analysis.R [arg1] [arg2] [arg3] [arg4]`; where `[arg1]` specifies the outcome ['combined', 'diabetes', or 'death'] ('combined' is death or diabetes),  `[arg2]`  is the outcome type ['binomial'], `[arg3]`  is the condition for conditional average treatment effects ['schizophrenia', 'mdd','black','latino','white', or 'none'], and `[arg4]` is a logical flag if super learner estimation is to be used. E.g., 
 
-	Rscript tmle_itt_analysis.R 'combined' 'binomial' 'none' 'TRUE'
+	`Rscript tmle_itt_analysis.R 'combined' 'binomial' 'none' 'TRUE'`
