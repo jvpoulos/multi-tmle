@@ -211,7 +211,9 @@ if(use.SL){
   initial_model_for_Y_sl_fit <- initial_model_for_Y_sl$train(initial_model_for_Y_task)
   initial_model_for_Y_preds <- initial_model_for_Y_sl_fit$predict(initial_model_for_Y_task) # predicted probs.
   
-  saveRDS(initial_model_for_Y_sl_fit,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", est.binomial, "_", est.LMTP, "_","initial_model_for_Y_sl_fit.rds")) # save model
+  if(condition=="none"){
+    saveRDS(initial_model_for_Y_sl_fit,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", est.binomial, "_", est.LMTP, "_","initial_model_for_Y_sl_fit.rds")) # save model
+  }
   
   if(outcome=="combined" & condition=="none" & outcome.type =="binomial"){
     Y.risks <- initial_model_for_Y_sl_fit$cv_risk(loss_loglik_binomial)
@@ -233,7 +235,9 @@ if(use.SL){
     initial_model_for_Y_preds <- predict(initial_model_for_Y,type="response") # predicted probs.
   }
   
-  saveRDS(initial_model_for_Y,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", est.binomial, "_", est.LMTP, "_","initial_model_for_Y.rds")) # save model
+  if(condition=="none"){
+    saveRDS(initial_model_for_Y,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", est.binomial, "_", est.LMTP, "_","initial_model_for_Y.rds")) # save model
+  }
   
   for(j in 1:J){
     newdata <- data.frame(cbind(Y,L,matrix(0, nrow=nrow(obs.treatment), ncol=ncol(obs.treatment), dimnames = dimnames(obs.treatment))))
@@ -268,7 +272,9 @@ if(use.SL){
   
   colnames(g_preds) <- colnames(obs.treatment)
   
-  saveRDS(initial_model_for_A_sl_fit,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", est.binomial, "_", est.LMTP, "_","initial_model_for_A_sl_fit.rds")) # save model
+  if(condition=="none"){
+    saveRDS(initial_model_for_A_sl_fit,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", est.binomial, "_", est.LMTP, "_","initial_model_for_A_sl_fit.rds")) # save model
+  }
   
 } else{
   
@@ -277,14 +283,18 @@ if(use.SL){
   g_preds <- fitted(initial_model_for_A)
   colnames(g_preds) <- colnames(obs.treatment)
   
-  saveRDS(initial_model_for_A,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", est.binomial, "_", est.LMTP, "_","initial_model_for_A.rds")) # save model
+  if(condition=="none"){
+    saveRDS(initial_model_for_A,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", est.binomial, "_", est.LMTP, "_","initial_model_for_A.rds")) # save model
+  }
   
   # binomial logistic regression
   initial_model_for_A_bin <- lapply(1:J, function(j) glm(formula=treatment ~ ., data=data.frame(cbind("treatment"=obs.treatment[,j], L)), family="binomial"))
   g_preds_bin <- sapply(1:J, function(j) predict(initial_model_for_A_bin[[j]], type="response"))
   colnames(g_preds_bin) <- colnames(obs.treatment)
   
-  saveRDS(initial_model_for_A_bin,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", est.binomial, "_", est.LMTP, "_","initial_model_for_A_bin.rds")) # save model
+  if(condition=="none"){
+    saveRDS(initial_model_for_A_bin,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", est.binomial, "_", est.LMTP, "_","initial_model_for_A_bin.rds")) # save model
+  }
 }
 
 if(outcome=="combined" & condition=="none" & use.SL){
@@ -320,7 +330,9 @@ if(est.binomial & use.SL){
   
   colnames(g_preds_bin) <- colnames(obs.treatment)
   
-  saveRDS(initial_model_for_A_sl_fit_bin,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", est.binomial, "_", est.LMTP, "_","initial_model_for_A_sl_fit_bin.rds")) # save model
+  if(condition=="none"){
+    saveRDS(initial_model_for_A_sl_fit_bin,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", est.binomial, "_", est.LMTP, "_","initial_model_for_A_sl_fit_bin.rds")) # save model
+  }
   
   # perform checks on propensity scores
   

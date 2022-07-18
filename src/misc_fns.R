@@ -33,8 +33,8 @@ neg_binom <- function(n, mu){
 }
 
 # definition: multinomial
-multinom <- function(n, probs){
-  rmultinom(n=n, size=1, prob=probs)
+multinom <- function(n, prob){
+  rmultinom(n=n, size=1, prob=prob)
 }
 
 # Summary figure for estimates
