@@ -210,7 +210,7 @@ ates.dat$x <- as.factor(ates.dat$x)
 
 ates.dat$Analysis <- c(rep("Multinomial (super learner)",each=length(comparisons)), rep("Binomial (super learner)",each=length(comparisons)))
 
-saveRDS(ates.dat,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_use_SL_",use.SL,  "_", condition, "_", est.binomial, "_","ates_dat.rds"))
+saveRDS(ates.dat,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_use_SL_",use.SL,  "_", condition, "_", use.SL, "_","ates_dat.rds"))
 
 if(use.SL==TRUE & condition!="none"){
   
@@ -307,15 +307,15 @@ if(use.SL==TRUE & condition!="none"){
   
   if(blind.drugs){
     if(slides){
-      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_use_SL_",use.SL,"_itt_ATE_blinded_slides.png"), plot=ate.plot, scale=1.25)
+      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_est_binomial_",est.binomial,"_itt_ATE_blinded_slides.png"), plot=ate.plot, scale=1.25)
     }else{
-      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_use_SL_",use.SL,"_itt_ATE_blinded.png"), plot=ate.plot, scale=1.25)
+      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition,"_est_binomial_",est.binomial,"_itt_ATE_blinded.png"), plot=ate.plot, scale=1.25)
     }
   }else{
     if(slides){
-      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_use_SL_",use.SL,"_itt_ATE_slides.png"), plot=ate.plot, scale=1.25)
+      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_est_binomial_",est.binomial,"_itt_ATE_slides.png"), plot=ate.plot, scale=1.25)
     }else{
-      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_use_SL_",use.SL,"_itt_ATE.png"), plot=ate.plot, scale=1.25)
+      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_est_binomial_",est.binomial,"_itt_ATE.png"), plot=ate.plot, scale=1.25)
     }
   }
 }

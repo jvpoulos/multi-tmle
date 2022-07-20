@@ -109,7 +109,7 @@ colnames(L.unscaled)[which(colnames(L.unscaled)=="West Virginia")] <- "West_Virg
 L <- L.unscaled
 
 if(scale.continuous){
-  continuous.vars <- c("calculated_age","preperiod_drug_use_days","preperiod_olanzeq_dose_total","preperiod_er_mhsa","preperiod_er_nonmhsa","preperiod_er_injury","preperiod_cond_mhsa",
+  continuous.vars <- c("calculated_age","preperiod_olanzeq_dose_total","preperiod_drug_use_days","preperiod_er_mhsa","preperiod_er_nonmhsa","preperiod_er_injury","preperiod_cond_mhsa",
                        "preperiod_cond_nonmhsa","preperiod_cond_injury","preperiod_los_mhsa","preperiod_los_nonmhsa","preperiod_los_injury")
   
   L[,continuous.vars] <- scale(L[,continuous.vars]) # scale continuous vars
@@ -117,7 +117,7 @@ if(scale.continuous){
 
 ## Summary statistics table
 
-if(condition=="none"){
+if(condition=="none" & use.SL){
   summary.tables <- TRUE
   if(summary.tables){
     print(tableNominal(data.frame(L.unscaled,A,Y.combined,Y.death, Y.diabetes)[c( "California","Georgia","Iowa",                         
@@ -212,7 +212,7 @@ if(use.SL){
   initial_model_for_Y_preds <- initial_model_for_Y_sl_fit$predict(initial_model_for_Y_task) # predicted probs.
   
   if(condition=="none"){
-    saveRDS(initial_model_for_Y_sl_fit,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", est.binomial, "_", est.LMTP, "_","initial_model_for_Y_sl_fit.rds")) # save model
+    saveRDS(initial_model_for_Y_sl_fit,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", use.SL, "_", "initial_model_for_Y_sl_fit.rds")) # save model
   }
   
   if(outcome=="combined" & condition=="none" & outcome.type =="binomial"){
@@ -236,7 +236,7 @@ if(use.SL){
   }
   
   if(condition=="none"){
-    saveRDS(initial_model_for_Y,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", est.binomial, "_", est.LMTP, "_","initial_model_for_Y.rds")) # save model
+    saveRDS(initial_model_for_Y,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", use.SL, "_", "initial_model_for_Y.rds")) # save model
   }
   
   for(j in 1:J){
@@ -273,7 +273,7 @@ if(use.SL){
   colnames(g_preds) <- colnames(obs.treatment)
   
   if(condition=="none"){
-    saveRDS(initial_model_for_A_sl_fit,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", est.binomial, "_", est.LMTP, "_","initial_model_for_A_sl_fit.rds")) # save model
+    saveRDS(initial_model_for_A_sl_fit,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", use.SL, "_", "initial_model_for_A_sl_fit.rds")) # save model
   }
   
 } else{
@@ -284,7 +284,7 @@ if(use.SL){
   colnames(g_preds) <- colnames(obs.treatment)
   
   if(condition=="none"){
-    saveRDS(initial_model_for_A,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", est.binomial, "_", est.LMTP, "_","initial_model_for_A.rds")) # save model
+    saveRDS(initial_model_for_A,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", use.SL, "_", "initial_model_for_A.rds")) # save model
   }
   
   # binomial logistic regression
@@ -293,7 +293,7 @@ if(use.SL){
   colnames(g_preds_bin) <- colnames(obs.treatment)
   
   if(condition=="none"){
-    saveRDS(initial_model_for_A_bin,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", est.binomial, "_", est.LMTP, "_","initial_model_for_A_bin.rds")) # save model
+    saveRDS(initial_model_for_A_bin,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", use.SL, "_", "initial_model_for_A_bin.rds")) # save model
   }
 }
 
@@ -331,7 +331,7 @@ if(est.binomial & use.SL){
   colnames(g_preds_bin) <- colnames(obs.treatment)
   
   if(condition=="none"){
-    saveRDS(initial_model_for_A_sl_fit_bin,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", est.binomial, "_", est.LMTP, "_","initial_model_for_A_sl_fit_bin.rds")) # save model
+    saveRDS(initial_model_for_A_sl_fit_bin,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", est.binomial, "_", "initial_model_for_A_sl_fit_bin.rds")) # save model
   }
   
   # perform checks on propensity scores
@@ -483,14 +483,14 @@ if(est.binomial==TRUE && est.LMTP==TRUE){
                "ATE_tmle_bin"= ATE_tmle_bin,"ATE_CI_tmle_bin_upper"=ATE_CI_tmle_bin_upper, "ATE_CI_tmle_bin_lower"=ATE_CI_tmle_bin_lower,
                "CATE_tmle_bin"= CATE_tmle_bin,"CATE_CI_tmle_bin_upper"=CATE_CI_tmle_bin_upper, "CATE_CI_tmle_bin_lower"=CATE_CI_tmle_bin_lower,
                "yinitial_lmtp"=unlist(yinitial_lmtp), "Ahat_lmtp"=unlist(Ahat_lmtp), "ess_ate_lmtp"=unlist(ess_ate_lmtp),
-               "ATE_lmtp"= unlist(results_ATE_lmtp),"ATE_CI_lmtp_upper"=unlist(lapply(results_ate_CI_lmtp, '[[', 2)), "ATE_CI_lmtp_lower"=unlist(lapply(results_ate_CI_lmtp, '[[', 1))),paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", est.binomial, "_", est.LMTP, "_","itt_analysis.rds"))
+               "ATE_lmtp"= unlist(results_ATE_lmtp),"ATE_CI_lmtp_upper"=unlist(lapply(results_ate_CI_lmtp, '[[', 2)), "ATE_CI_lmtp_lower"=unlist(lapply(results_ate_CI_lmtp, '[[', 1))),paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", use.SL, "_", est.LMTP, "_","itt_analysis.rds"))
 }else{
   saveRDS(list("yinitial_tmle"=yinitial_tmle,"Ahat_tmle"=Ahat_tmle,"yhat_tmle"= yhat_tmle, "ess_ate_tmle"=ess_ate_tmle,
                "Ahat_tmle_bin"=Ahat_tmle_bin,"yhat_tmle_bin"= yhat_tmle_bin, "ess_ate_tmle_bin"=ess_ate_tmle_bin,
                "ATE_tmle"= ATE_tmle,"ATE_CI_tmle_upper"=ATE_CI_tmle_upper, "ATE_CI_tmle_lower"=ATE_CI_tmle_lower,
                "CATE_tmle"= CATE_tmle,"CATE_CI_tmle_upper"=CATE_CI_tmle_upper, "CATE_CI_tmle_lower"=CATE_CI_tmle_lower,
                "ATE_tmle_bin"= ATE_tmle_bin,"ATE_CI_tmle_bin_upper"=ATE_CI_tmle_bin_upper, "ATE_CI_tmle_bin_lower"=ATE_CI_tmle_bin_lower,
-               "CATE_tmle_bin"= CATE_tmle_bin,"CATE_CI_tmle_bin_upper"=CATE_CI_tmle_bin_upper, "CATE_CI_tmle_bin_lower"=CATE_CI_tmle_bin_lower),paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", est.binomial, "_","itt_analysis.rds"))
+               "CATE_tmle_bin"= CATE_tmle_bin,"CATE_CI_tmle_bin_upper"=CATE_CI_tmle_bin_upper, "CATE_CI_tmle_bin_lower"=CATE_CI_tmle_bin_lower),paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", use.SL, "_","itt_analysis.rds"))
 }
 
 ## Summary stats and results plots
