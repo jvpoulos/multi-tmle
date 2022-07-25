@@ -41,7 +41,7 @@ multinom <- function(n, prob){
 ForestPlot <- function(d, xlab, ylab){
   # Forest plot for summary figure
   p <- ggplot(d, aes(x=x, y=y, ymin=y.lo, ymax=y.hi,colour=forcats::fct_rev(Analysis))) + 
-    geom_pointrange(size=1, position = position_dodge(width = 0.5)) + 
+    geom_pointrange(size=1, position = position_dodge(width = -0.5)) + 
     coord_flip() +
     geom_hline(aes(yintercept=0), lty=2) +
     ylab(xlab) +
