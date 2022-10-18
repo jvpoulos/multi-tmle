@@ -1,5 +1,22 @@
 # multi-tmle
-Code and data accompanying the paper ["Targeted learning in observational studies with multi‐level treatments: an evaluation of antipsychotic drug treatment safety for patients with serious mental illness"](http://arxiv.org/abs/2206.15367). N.b.: The data provided for the empirical application is simulated, since we cannot provide the actual Medicare data, and are provided for illustrative purposes.
+Code and data accompanying the paper ["Targeted learning in observational studies with multi‐level treatments: an evaluation of antipsychotic drug treatment safety"](http://arxiv.org/abs/2206.15367). 
+
+N.b.: We cannot provide the actual Centers for Medicare & Medicaid Services (CMS) data used in the application because they are protected. The simulated data provided in this repo are for illustrative purposes.
+
+Please cite the paper if you use this repo:
+
+```
+@misc{https://doi.org/10.48550/arxiv.2206.15367,
+  doi = {10.48550/ARXIV.2206.15367},
+  url = {https://arxiv.org/abs/2206.15367},
+  author = {Poulos, Jason and Horvitz-Lennon, Marcela and Zelevinsky, Katya and Cristea-Platon, Tudor and Huijskens, Thomas and Tyagi, Pooja and Yan, Jiaju and Diaz, Jordi and Normand, Sharon-Lise},
+  keywords = {Applications (stat.AP), Methodology (stat.ME), FOS: Computer and information sciences, FOS: Computer and information sciences},
+  title = {Targeted learning in observational studies with multi-level treatments: An evaluation of antipsychotic drug treatment safety},
+  publisher = {arXiv},
+  year = {2022},
+  copyright = {arXiv.org perpetual, non-exclusive license}
+}
+```
 
 Prerequsites
 ------
@@ -34,7 +51,9 @@ Contents
 
 	+ *gbound* and *ybound* numerical vectors defining bounds to be used for the propensity score and initial Y predictions, resp. Default is c(0.001,0.999) for *gbound*. For *ybound* the default is c(0.0001, 0.9999), for in the case of "binomial" outcome type, or c(0,1000) for "continuous" outcome type. 
 
-	+ *J*: number of treatments, J={3,6}.
+	+ *J*: number of treatments, defaults to J=6.
+
+	+ *n*: sample size. Defaults to n=6000.
 
 	+ *R*: number of simulation runs. Default is 1000. 
 
@@ -69,9 +88,9 @@ Instructions
 
 	`Rscript tmle_MultinomialTrts.R 'tmle' 1 'binomial' 'TRUE'`
 
-3. To plot simulation results, run: `Rscript package_list.R [arg1]`; where `[arg1]` specifies the output path of the simulation results. E.g., 
+3. To plot simulation results, run: `Rscript combine_sim_plots.R [arg1]`; where `[arg1]` specifies the output path of the simulation results. E.g., 
 	
-	`Rscript package_list.R 'outputs/20220504'`
+	`Rscript combine_sim_plots.R 'outputs/20220504'`
 
 4. For ITT analysis on simulated data, run in bash script: `Rscript tmle_itt_analysis.R [arg1] [arg2] [arg3] [arg4]`; where `[arg1]` specifies the outcome ['combined', 'diabetes', or 'death'] ('combined' is death or diabetes),  `[arg2]`  is the outcome type ['binomial'], `[arg3]`  is the condition for conditional average treatment effects ['schizophrenia', 'mdd','black','latino','white', or 'none'], and `[arg4]` is a logical flag if super learner estimation is to be used. E.g., 
 
