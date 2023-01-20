@@ -33,11 +33,11 @@ Contents
 
 * ***src/data_generation.R***: function for simulating data following Yang et al. (2016, Biometrics). Inputs *n* sample size; *J* number of treatments (numeric; 3 or 6 supported), and logical flags. Returns list including generated dataframe, observed treatment matrix, true treatment effects, potential outcomes, and contrast matrix.
 
-	* **src/misc_fns**: includes misc. functions, including a function to bound predicted probabilities; functions generate different distributions; and a forest plot function. 
+* ***src/misc_fns***: includes misc. functions, including a function to bound predicted probabilities; functions generate different distributions; and a forest plot function. 
 
-	* ***src/tmle_calculation.R***: function for generating counterfactual means across all J treatment levels. Inputs initial Y estimates, bounded predicted treatment probabilities, observed treatment, observed outcomes, a contrast matrix, the number of contrasts, and logical flags. Outputs treatment-specific means.
+* ***src/tmle_calculation.R***: function for generating counterfactual means across all J treatment levels. Inputs initial Y estimates, bounded predicted treatment probabilities, observed treatment, observed outcomes, and logical flags. Outputs treatment-specific means.
 
-	* ***src/tmleContrast.R***: function for calculating contrasts across all J treatment levels. Inputs treatment-specific means, the contrast matrix, and logical flags. Outputs ATE and variance estimates. If a binary covariate is supplied, estimates for CATE are also produced. 
+* ***src/tmleContrast.R***: function for calculating contrasts across all J treatment levels. Inputs treatment-specific means, the contrast matrix, and logical flags. Outputs ATE and variance estimates. If a binary covariate is supplied, estimates for CATE are also produced. 
 
 * ***tmle_MultinomialTrts.R***: static setting (T=1) simulation, comparing the performance of manual multinomial TMLE with existing implementations using multiple binary treatments, with multiple levels of treatment. Simulates data over multiple runs and compares implementations in terms of bias, coverage, and CI width. The script consists of the following relevant parameters:
 
@@ -77,14 +77,14 @@ Contents
 
 * ***tmle_itt_analysis_sim.R*** code for ITT analysis on simulated CMS data, with J=6 levels of treatment.
 
-	+ ***tmle_itt_analysis_eda.R*** code for producing descriptive plots and tables for the ITT analysis.
+* ***tmle_itt_analysis_eda.R*** code for producing descriptive plots and tables for the ITT analysis.
 
 Instructions
 ------
 
 1. Install require **R** packages: `Rscript package_list.R`
 
-2. For simulations, run: `Rscript tmle_MultinomialTrts.R [arg1] [arg2] [arg3] [arg4]`; where `[arg1]` specifies the estimator ['tmle' or 'lmtp'],  `[arg2]` is a number specifying the simulation setting, `[arg3]`  is the outcome type ['binomial' or 'continuous'], and `[arg4]` is a logical flag if super learner estimation is to be used. E.g.,
+2. For simulations, run: `Rscript tmle_MultinomialTrts.R [arg1] [arg2] [arg3] [arg4]`; where `[arg1]` specifies the estimator ['tmle' or 'lmtp'],  `[arg2]` is a number specifying the simulation setting [1-18], `[arg3]`  is the outcome type ['binomial' or 'continuous'], and `[arg4]` is a logical flag if super learner estimation is to be used. E.g.,
 
 	`Rscript tmle_MultinomialTrts.R 'tmle' 1 'binomial' 'TRUE'`
 
