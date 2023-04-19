@@ -1,23 +1,14 @@
 ############################################################################################
 # Static setting (T=1) simulations: Compare multinomial TMLE with binary TMLE             #
 ############################################################################################
-library(purrr)
-library(origami)
-library(sl3)
-library(nnet)
-library(ranger)
-library(xgboost)
-library(glmnet)
-library(MASS)
-library(lmtp)
 
 # Setup parallel processing
-doMPI <- FALSE
+doMPI <- TRUE
 if(doMPI){
   library(doMPI)
   
   # Start cluster
-  cl <- startMPIcluster()
+  cl <- startMPIcluster(verbose=TRUE)
   
   # Register cluster
   registerDoMPI(cl)
@@ -52,6 +43,16 @@ source('./src/misc_fns.R')
 ######################
 
 staticSim <- function(r, J, n, gbound, ybound, n.folds, estimator, overlap.setting, gamma.setting, outcome.type, target.gwt, use.SL, scale.continuous){
+  
+  library(purrr)
+  library(origami)
+  library(sl3)
+  library(nnet)
+  library(ranger)
+  library(xgboost)
+  library(glmnet)
+  library(MASS)
+  library(lmtp)
   
   print(paste("This is simulation run number",r, "\n"))
   
@@ -100,17 +101,19 @@ staticSim <- function(r, J, n, gbound, ybound, n.folds, estimator, overlap.setti
   CIW_ate_tmle_bin <- list()
   
   # stack learners into a model
-  learner_stack_Y <- make_learner_stack(list("Lrnr_xgboost",nrounds=10),list("Lrnr_ranger",num.trees=100), list("Lrnr_ranger",num.trees=200), list("Lrnr_ranger",num.trees=500), list("Lrnr_glmnet",nfolds = 10,alpha = 1), list("Lrnr_glmnet",nfolds = 10,alpha = 0), list("Lrnr_glmnet",nfolds = 10,alpha = 0.5)) 
-  learner_stack_A <- make_learner_stack(list("Lrnr_ranger",num.trees=100),list("Lrnr_ranger",num.trees=200),list("Lrnr_ranger",num.trees=500), list("Lrnr_glmnet",nfolds = 10,alpha = 1), list("Lrnr_glmnet",nfolds = 10,alpha = 0), list("Lrnr_glmnet",nfolds = 10,alpha = 0.5))  
+  learner_stack_A <- make_learner_stack(list("Lrnr_xgboost",nrounds=20, objective="multi:softprob", eval_metric="mlogloss",num_class=J), list("Lrnr_ranger",num.trees=100),list("Lrnr_ranger",num.trees=500), list("Lrnr_glmnet",nfolds = n.folds,alpha = 1, family = "multinomial"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.25, family = "multinomial"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.5, family = "multinomial"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.75, family = "multinomial"))  
+  learner_stack_A_bin <- make_learner_stack(list("Lrnr_xgboost",nrounds=20, objective = "reg:logistic"), list("Lrnr_ranger",num.trees=100),list("Lrnr_ranger",num.trees=500), list("Lrnr_glmnet",nfolds = n.folds,alpha = 1, family = "binomial"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.25, family = "binomial"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.5, family = "binomial"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.75, family = "binomial"))  
+  
   # metalearner defaults 
-  # https://github.com/tlverse/sl3/blob/master/R/default_metalearner.R
   if(outcome.type=="continuous"){
-    metalearner_Y <- make_learner(Lrnr_solnp,learner_function=metalearner_linear,loss_function=loss_squared_error)
+    metalearner_Y <- make_learner(Lrnr_solnp,learner_function=metalearner_linear,eval_function=loss_squared_error) # nonlinear optimization via augmented Lagrange
+    learner_stack_Y <- make_learner_stack(list("Lrnr_xgboost",nrounds=20, objective = "reg:squarederror"), list("Lrnr_ranger",num.trees=100), list("Lrnr_ranger",num.trees=500), list("Lrnr_glmnet",nfolds = n.folds,alpha = 1, family = "gaussian"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.25, family = "gaussian"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.5, family = "gaussian"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.75, family = "gaussian")) 
   }else if (outcome.type =="binomial"){
-    metalearner_Y <- make_learner(Lrnr_solnp,learner_function=metalearner_logistic_binomial,loss_function=loss_squared_error)
+    metalearner_Y <- make_learner(Lrnr_solnp,learner_function=metalearner_logistic_binomial,eval_function=loss_loglik_binomial)
+    learner_stack_Y <- make_learner_stack(list("Lrnr_xgboost",nrounds=20, objective = "reg:logistic"), list("Lrnr_ranger",num.trees=100), list("Lrnr_ranger",num.trees=500), list("Lrnr_glmnet",nfolds = n.folds,alpha = 1, family = "binomial"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.25, family = "binomial"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.5, family = "binomial"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.75, family = "binomial")) 
   }
-  metalearner_A <- make_learner(Lrnr_solnp,learner_function=metalearner_linear_multinomial, loss_function=loss_loglik_multinomial)
-  metalearner_A_bin <- make_learner(Lrnr_solnp,learner_function=metalearner_logistic_binomial,loss_function=loss_squared_error)
+  metalearner_A <- make_learner(Lrnr_solnp,learner_function=metalearner_linear_multinomial, eval_function=loss_loglik_multinomial)
+  metalearner_A_bin <- make_learner(Lrnr_solnp,learner_function=metalearner_logistic_binomial,eval_function=loss_loglik_binomial)
   
   if(estimator=="tmle"){
     
@@ -125,7 +128,8 @@ staticSim <- function(r, J, n, gbound, ybound, n.folds, estimator, overlap.setti
       
       initial_model_for_Y_sl <- make_learner(Lrnr_sl, # cross-validates base models
                                              learners = learner_stack_Y,
-                                             metalearner = metalearner_Y)
+                                             metalearner = metalearner_Y,
+                                             keep_extra=FALSE)
       initial_model_for_Y_sl_fit <- initial_model_for_Y_sl$train(initial_model_for_Y_task)
       initial_model_for_Y_preds <- initial_model_for_Y_sl_fit$predict(initial_model_for_Y_task) # predicted probs.
       
@@ -167,7 +171,8 @@ staticSim <- function(r, J, n, gbound, ybound, n.folds, estimator, overlap.setti
       
       initial_model_for_A_sl <- make_learner(Lrnr_sl, # cross-validates base models
                                              learners = learner_stack_A,
-                                             metalearner = metalearner_A)
+                                             metalearner = metalearner_A,
+                                             keep_extra=FALSE)
       initial_model_for_A_sl_fit <- initial_model_for_A_sl$train(initial_model_for_A_task)
       
       g_preds  <- initial_model_for_A_sl_fit$predict(initial_model_for_A_task)  # estimated propensity scores 
@@ -182,8 +187,9 @@ staticSim <- function(r, J, n, gbound, ybound, n.folds, estimator, overlap.setti
                                                                             folds = origami::make_folds(cbind(A,L), fold_fun = folds_vfold, V = n.folds)))
       
       initial_model_for_A_sl_bin <- make_learner(Lrnr_sl, # cross-validates base models
-                                                 learners = learner_stack_A,
-                                                 metalearner = metalearner_A_bin)
+                                                 learners = learner_stack_A_bin,
+                                                 metalearner = metalearner_A_bin,
+                                                 keep_extra=FALSE)
       initial_model_for_A_sl_fit_bin <- lapply(1:J, function(j) initial_model_for_A_sl_bin$train(initial_model_for_A_task_bin[[j]]))
       
       g_preds_bin  <- sapply(1:J, function(j) initial_model_for_A_sl_fit_bin[[j]]$predict(initial_model_for_A_task_bin[[j]]))  # estimated propensity scores 
@@ -198,21 +204,9 @@ staticSim <- function(r, J, n, gbound, ybound, n.folds, estimator, overlap.setti
       colnames(g_preds) <- colnames(obs.treatment)
       
       # binomial logistic regression
-      initial_model_for_A_bin <- lapply(1:J, function(j) glm(formula=A ~ ., data=cbind(A, L), family="binomial"))
+      initial_model_for_A_bin <- lapply(1:J, function(j) glm(formula=treatment ~ ., data=cbind("treatment"=obs.treatment[,j], L), family="binomial"))
       g_preds_bin <- sapply(1:J, function(j) predict(initial_model_for_A_bin[[j]], type="response"))
       colnames(g_preds_bin) <- colnames(obs.treatment)
-    }
-    
-    if(sum(rowSums(g_preds))!=n){ #     # verify they sum to one
-      print("Warning: multinomial treatment probablities do not sum to 1")
-    }
-    
-    if(any((g_preds < 0) | (g_preds > 1))){ #     # verify they are between 0 and 1
-      print("Warning: multinomial treatment probablities are not between 0 and 1")
-    }
-    
-    if(any((g_preds_bin < 0) | (g_preds_bin > 1))){ #     # verify they are between 0 and 1
-      print("Warning: binomial treatment probablities are not between 0 and 1")
     }
     
     g_preds_bounded <- boundProbs(g_preds, gbound) # (trimmed) estimated propensity scores
@@ -278,7 +272,7 @@ staticSim <- function(r, J, n, gbound, ybound, n.folds, estimator, overlap.setti
                                      .bound = if(outcome.type=="binomial") ybound[1] else 1e-5,
                                      .trim = gbound[2],
                                      .SL_folds = n.folds,
-                                     learners_trt= if(use.SL) learner_stack_A else sl3::make_learner(sl3::Lrnr_glm),
+                                     learners_trt= if(use.SL) learner_stack_A_bin else sl3::make_learner(sl3::Lrnr_glm),
                                      learners_outcome= if(use.SL) learner_stack_Y else sl3::make_learner(sl3::Lrnr_glm))
     }
     
@@ -329,10 +323,19 @@ staticSim <- function(r, J, n, gbound, ybound, n.folds, estimator, overlap.setti
 #####################
 
 # define settings for simulation
-settings <- expand.grid("J"=c(6),
+settings <- expand.grid("J"=c(3,6),
                         "n"=c(6000),
                         "overlap.setting"=c("adequate","inadequate","rct"),
                         "gamma.setting"=c("zero","yang","low"))
+settings$n <- ifelse(settings$J==6, 6000, 1500)
+
+vary.n <- FALSE
+if(vary.n){
+  settings <- expand.grid("J"=c(6),
+                          "n"=c(600,10000),
+                          "overlap.setting"=c("adequate","inadequate","rct"),
+                          "gamma.setting"=c("zero","yang","low"))
+}
 
 options(echo=TRUE)
 args <- commandArgs(trailingOnly = TRUE) # command line arguments
@@ -358,7 +361,7 @@ if(outcome.type=="continuous"){
   ybound <- c(0.0001, 0.9999) # define bounds to be used for the Y predictions
 }
 
-n.folds <- 2
+n.folds <- 5
 
 target.gwt <- TRUE # When TRUE, moves propensity weights from denominator of clever covariate to regression weight when fitting updated model for Y
 
@@ -396,7 +399,7 @@ filename <- paste0(output_dir,
 
 print(paste0('simulation setting: ', "estimator = ", estimator, " R = ", R, ", n = ", n,", J = ",J, ", overlap.setting = ",overlap.setting, ", gamma.setting = ", gamma.setting, ", outcome.type = ", outcome.type, ", use.SL = ",use.SL, ", scale.continuous = ", scale.continuous))
 
-sim.results <- foreach(r = 1:R, .combine='cbind', .packages = c("MASS","nnet","purrr","sl3","origami","xgboost","ranger","glmnet","lmtp"), .verbose = FALSE) %dopar% {
+sim.results <- foreach(r = 1:R, .combine='cbind', .verbose = TRUE) %dopar% {
   staticSim(r=r, J, n, gbound, ybound, n.folds, estimator, overlap.setting, gamma.setting, outcome.type, target.gwt, use.SL, scale.continuous)
 }
 sim.results

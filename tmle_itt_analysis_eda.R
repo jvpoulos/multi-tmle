@@ -21,8 +21,8 @@ outcome.labels <-list("combined"=c("diabetes diagnosis or death within 36 months
                       "death"=c("death within 36 months"))
 
 condition.labels <- list("none"=c("all patients"),
-                         "schizophrenia"=c("patients with a Schizophrenia diagnosis at baseline"),
-                         "mdd"=c("patients with a MDD diagnosis at baseline"),
+                         "schizophrenia"=c("patients diagnosed with Schizophrenia"),
+                         "mdd"=c("patients diagnosed with MDD"),
                          "black"=c("black patients"),
                          "white"=c("white patients"),
                          "latino"=c("latino patients"))
@@ -32,7 +32,7 @@ blinded.labels <- c("Reference","A","B","C","D","E")
 if(use.SL){
   estimator.labels <- c("Multinomial (super learner)", "Binomial (super learner)")
 }else{
-  estimator.labels <- c("Multinomial (Logistic)", "Binomial (Logistic)")
+  estimator.labels <- c("Multinomial (GLM)", "Binomial (GLM)")
 }
 
 if(outcome=="combined" & condition=="none" & use.SL==TRUE){
@@ -123,9 +123,9 @@ if(outcome=="combined" & condition=="none" & use.SL==TRUE){
   obs.treatment <- dummify(A) # dummy matrix
   for(estimator in estimator.labels){
     for(j in 1:ncol(obs.treatment)){
-      if(estimator %in% c("Multinomial (super learner)","Multinomial (Logistic)")){
+      if(estimator %in% c("Multinomial (super learner)","Multinomial (GLM)")){
         obs.treatment.probs <- g_preds*obs.treatment[,j]
-      }else if (estimator %in% c("Binomial (super learner)","Binomial (Logistic)")){
+      }else if (estimator %in% c("Binomial (super learner)","Binomial (GLM)")){
         obs.treatment.probs <- g_preds_bin*obs.treatment[,j]
       }
       
@@ -214,7 +214,7 @@ saveRDS(ates.dat,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_use_SL_",
 
 if(use.SL==TRUE & condition!="none"){
   
-  estimand <- "CATE"
+  estimand <- TeX('$CATE_{j,j^*}$')
   
   cates.dat <- data.frame(x =rep(comparisons,2),
                           y = c(CATE_tmle,CATE_tmle_bin),
@@ -229,15 +229,16 @@ if(use.SL==TRUE & condition!="none"){
                           xlab=estimand,ylab="Treatment drug") +
     labs(color="TMLE:") +
     scale_x_discrete(limits = rev) +
-    theme(legend.position = "bottom") +
+    theme(legend.position = "bottom",legend.margin=margin(0,0,0,0), legend.justification="left",
+          legend.box.margin=margin(-5,-5,-5,-5),legend.text=element_text(size=10)) +
     theme(plot.title = element_text(hjust = 0.5, family="serif", size=16), plot.subtitle = element_text(hjust = 0.5, family="serif", size=12)) +
     theme(axis.title=element_text(family="serif", size=16)) +
     theme(axis.text.y=element_text(family="serif", size=14)) +
     theme(axis.text.x=element_text(family="serif", size=14,angle = 45, vjust = 0.5, hjust=1)) +
     theme(strip.text.x = element_text(family="serif", size = 14)) +
     theme(strip.text.y = element_text(family="serif", size = 14)) +
-    theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l =0))) +
-    theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l =0))) +
+    theme(axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l =0))) +
+    theme(axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l =0))) +
     theme(panel.spacing = unit(1, "lines"))
   
   cate.plot <- cate.plot +
@@ -245,9 +246,9 @@ if(use.SL==TRUE & condition!="none"){
              colour = "blue", size = 1, arrow = arrow(length = unit(0.1, "inches"), ends="last", type="closed")) +
     annotate("segment", x = 0.5, xend = 0.5, y = -0.002, yend = -0.025,
              colour = "blue", size = 1, arrow = arrow(length = unit(0.1, "inches"), ends="last", type="closed")) +
-    annotate("text", x = 0.65, y = -0.012, label = "Favors treatment drug")
+    annotate("text", x = 0.65, y = -0.012, label = "Favors treatment")
   
-  cate.plot <- cate.plot + annotate("text", x = 0.65, y = 0.012, label = "Favors reference drug") 
+  cate.plot <- cate.plot + annotate("text", x = 0.65, y = 0.012, label = "Favors Reference") 
 
   if(slides){
     if(condition=="none"){
@@ -258,34 +259,35 @@ if(use.SL==TRUE & condition!="none"){
   }
   if(blind.drugs){
     if(slides){
-      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_use_SL_",use.SL, "_itt_CATE_blinded_slides.png"), plot=cate.plot, scale=1.25)
+      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_est_binomial_",est.binomial, "_itt_CATE_blinded_slides.png"), plot=cate.plot, scale=1.3)
     }else{
-      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_use_SL_",use.SL,"_itt_CATE_blinded.png"), plot=cate.plot, scale=1.25)
+      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_est_binomial_",est.binomial, "_itt_CATE_blinded.png"), plot=cate.plot, scale=1.25)
     }
   }else{
     if(slides){
-      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_use_SL_",use.SL,"_itt_CATE_slides.png"), plot=cate.plot, scale=1.25)
+      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_est_binomial_",est.binomial,"_itt_CATE_slides.png"), plot=cate.plot, scale=1.25)
     }else{
-      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_use_SL_",use.SL,"_itt_CATE.png"), plot=cate.plot, scale=1.25)
+      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_est_binomial_",est.binomial,"_itt_CATE.png"), plot=cate.plot, scale=1.25)
     }
   }
   
 }else{
-  estimand <- "ATE"
+  estimand <- TeX('$ATE_{j,j^*}$')
 
   ate.plot <- ForestPlot(ates.dat,
                          xlab=estimand,ylab="Treatment drug") +
     labs(color="TMLE:") +
     scale_x_discrete(limits = rev) +
-    theme(legend.position = "bottom") +
-    theme(plot.title = element_text(hjust = 0.5, family="serif", size=16), plot.subtitle = element_text(hjust = 0.5, family="serif", size=12)) +
-    theme(axis.title=element_text(family="serif", size=16)) +
-    theme(axis.text.y=element_text(family="serif", size=14)) +
-    theme(axis.text.x=element_text(family="serif", size=14,angle = 45, vjust = 0.5, hjust=1)) +
-    theme(strip.text.x = element_text(family="serif", size = 14)) +
-    theme(strip.text.y = element_text(family="serif", size = 14)) +
-    theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l =0))) +
-    theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l =0))) +
+    theme(legend.position = "bottom",legend.margin=margin(0,0,0,0), legend.justification="left",
+          legend.box.margin=margin(-5,-5,-5,-5),legend.text=element_text(size=8)) +
+    theme(plot.title = element_text(hjust = 0.5, family="serif", size=14), plot.subtitle = element_text(hjust = 0.5, family="serif", size=12)) +
+    theme(axis.title=element_text(family="serif", size=14)) +
+    theme(axis.text.y=element_text(family="serif", size=10)) +
+    theme(axis.text.x=element_text(family="serif", size=10,angle = 45, vjust = 0.5, hjust=1)) +
+    theme(strip.text.x = element_text(family="serif", size = 10)) +
+    theme(strip.text.y = element_text(family="serif", size = 10)) +
+    theme(axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l =0))) +
+    theme(axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l =0))) +
     theme(panel.spacing = unit(1, "lines"))
   
   ate.plot <- ate.plot +
@@ -293,9 +295,9 @@ if(use.SL==TRUE & condition!="none"){
              colour = "blue", size = 1, arrow = arrow(length = unit(0.1, "inches"), ends="last", type="closed")) +
     annotate("segment", x = 0.5, xend = 0.5, y = -0.002, yend = -0.025,
              colour = "blue", size = 1, arrow = arrow(length = unit(0.1, "inches"), ends="last", type="closed")) +
-    annotate("text", x = 0.65, y = -0.012, label = "Favors treatment drug")
+    annotate("text", x = 0.65, y = -0.012, label = "Favors treatment")
   
-  ate.plot <- ate.plot + annotate("text", x = 0.65, y = 0.012, label = "Favors reference drug") 
+  ate.plot <- ate.plot + annotate("text", x = 0.65, y = 0.012, label = "Favors Reference") 
   
   if(slides){
     if(condition=="none"){
@@ -307,15 +309,15 @@ if(use.SL==TRUE & condition!="none"){
   
   if(blind.drugs){
     if(slides){
-      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_est_binomial_",est.binomial,"_itt_ATE_blinded_slides.png"), plot=ate.plot, scale=1.25)
+      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_est_binomial_",est.binomial,"_itt_ATE_blinded_slides.png"), plot=ate.plot, scale=1.3)
     }else{
-      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition,"_est_binomial_",est.binomial,"_itt_ATE_blinded.png"), plot=ate.plot, scale=1.25)
+      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_est_binomial_",est.binomial,"_itt_ATE_blinded.png"), plot=ate.plot+theme(legend.position = "none"), scale=1.25)
     }
   }else{
     if(slides){
       ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_est_binomial_",est.binomial,"_itt_ATE_slides.png"), plot=ate.plot, scale=1.25)
     }else{
-      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_est_binomial_",est.binomial,"_itt_ATE.png"), plot=ate.plot, scale=1.25)
+      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_est_binomial_",est.binomial,"_itt_ATE.png"), plot=ate.plot+theme(legend.position = "none"), scale=1.25)
     }
   }
 }

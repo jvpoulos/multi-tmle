@@ -19,6 +19,8 @@ library(grid)
 library(lmtp)
 library(sl3)
 options(sl3.verbose = FALSE)
+library(car)
+library(latex2exp)
 
 # load utils
 source('./src/tmle_calculation.R')
@@ -93,7 +95,6 @@ L.unscaled <- cbind(dummify(factor(simdata_from_basevars$state_character),show.n
                     "preperiod_ever_rx_cm_nondiab"=simdata_from_basevars$preperiod_ever_rx_cm_nondiab,
                     "preperiod_ever_rx_other"=simdata_from_basevars$preperiod_ever_rx_other,
                     "calculated_age"=simdata_from_basevars$calculated_age,
-                    "preperiod_olanzeq_dose_total"=simdata_from_basevars$preperiod_olanzeq_dose_total,
                     "preperiod_er_mhsa"=simdata_from_basevars$preperiod_er_mhsa,
                     "preperiod_er_nonmhsa"=simdata_from_basevars$preperiod_er_nonmhsa,
                     "preperiod_er_injury"=simdata_from_basevars$preperiod_er_injury,
@@ -109,11 +110,17 @@ colnames(L.unscaled)[which(colnames(L.unscaled)=="West Virginia")] <- "West_Virg
 L <- L.unscaled
 
 if(scale.continuous){
-  continuous.vars <- c("calculated_age","preperiod_olanzeq_dose_total","preperiod_drug_use_days","preperiod_er_mhsa","preperiod_er_nonmhsa","preperiod_er_injury","preperiod_cond_mhsa",
+  continuous.vars <- c("calculated_age","preperiod_drug_use_days","preperiod_er_mhsa","preperiod_er_nonmhsa","preperiod_er_injury","preperiod_cond_mhsa",
                        "preperiod_cond_nonmhsa","preperiod_cond_injury","preperiod_los_mhsa","preperiod_los_nonmhsa","preperiod_los_injury")
   
   L[,continuous.vars] <- scale(L[,continuous.vars]) # scale continuous vars
 }
+
+if(use.SL==FALSE){ # exclude multicolinear variables for GLM (VIF)
+  glm.exlude <- c("California")
+  L <- L[,!colnames(L)%in%glm.exlude]
+}
+
 
 ## Summary statistics table
 
@@ -125,7 +132,7 @@ if(condition=="none" & use.SL){
                                                                          "payer_index_mdcr","preperiod_ever_psych","preperiod_ever_metabolic","preperiod_ever_other","preperiod_ever_mt_gluc_or_lip",
                                                                          "preperiod_ever_rx_antidiab", "preperiod_ever_rx_cm_nondiab", "preperiod_ever_rx_other","Y.combined","Y.death", "Y.diabetes")], group=A, prec = 3, cumsum=FALSE, longtable = FALSE))
     
-    print(tableContinuous(data.frame(L.unscaled,A)[c("calculated_age","preperiod_drug_use_days","preperiod_olanzeq_dose_total","preperiod_er_mhsa","preperiod_er_nonmhsa","preperiod_er_injury","preperiod_cond_mhsa",
+    print(tableContinuous(data.frame(L.unscaled,A)[c("calculated_age","preperiod_drug_use_days","preperiod_er_mhsa","preperiod_er_nonmhsa","preperiod_er_injury","preperiod_cond_mhsa",
                                                      "preperiod_cond_nonmhsa","preperiod_cond_injury","preperiod_los_mhsa","preperiod_los_nonmhsa","preperiod_los_injury")], group=A, prec = 3, cumsum=FALSE, stats= c("n", "min", "mean", "max", "s"), longtable = FALSE))
   }
 }
@@ -138,12 +145,16 @@ if(condition=="schizophrenia"){
   x <- ifelse(L[,'schiz']==1,1,0)
 } else if(condition=="mdd"){
   x <- ifelse(L[,'mdd']==1,1,0)
+} else if(condition=="bipolar"){
+  x <- ifelse(L[,'mdd']==0 & L[,'schiz']==0,1,0)
 }else if(condition=="black"){
   x <- ifelse(L[,'black']==1,1,0)
 }else if(condition=="latino"){
   x <- ifelse(L[,'latino']==1,1,0)
 }else if(condition=="white"){
   x <- ifelse(L[,'white']==1,1,0)
+}else if(condition=="other"){
+  x <- ifelse(L[,'white']==0 & L[,'black']==0 & L[,'latino']==0,1,0)
 }
 
 ## set parameters
@@ -163,16 +174,16 @@ est.binomial <- TRUE # When True, estimates binomial treatment model
 est.LMTP <- FALSE # When True, estimates LMTP
 
 # stack learners into a model
-learner_stack_A <- make_learner_stack(list("Lrnr_ranger",num.trees=50),list("Lrnr_ranger",num.trees=100),list("Lrnr_ranger",num.trees=500), list("Lrnr_glmnet",nfolds = n.folds,alpha = 1, family = "multinomial"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0, family = "multinomial"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.25, family = "multinomial"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.5, family = "multinomial"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.75, family = "multinomial"))  
-learner_stack_A_bin <- make_learner_stack(list("Lrnr_ranger",num.trees=50),list("Lrnr_ranger",num.trees=100),list("Lrnr_ranger",num.trees=500), list("Lrnr_glmnet",nfolds = n.folds,alpha = 1, family = "binomial"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0, family = "binomial"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.25, family = "binomial"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.5, family = "binomial"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.75, family = "binomial"))  
+learner_stack_A <- make_learner_stack(list("Lrnr_xgboost",nrounds=20, objective="multi:softprob", eval_metric="mlogloss",num_class=J), list("Lrnr_ranger",num.trees=100),list("Lrnr_ranger",num.trees=500), list("Lrnr_glmnet",nfolds = n.folds,alpha = 1, family = "multinomial"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.25, family = "multinomial"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.5, family = "multinomial"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.75, family = "multinomial"))  
+learner_stack_A_bin <- make_learner_stack(list("Lrnr_xgboost",nrounds=20, objective = "reg:logistic"), list("Lrnr_ranger",num.trees=100),list("Lrnr_ranger",num.trees=500), list("Lrnr_glmnet",nfolds = n.folds,alpha = 1, family = "binomial"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.25, family = "binomial"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.5, family = "binomial"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.75, family = "binomial"))  
 
 # metalearner defaults 
 if(outcome.type=="continuous"){
   metalearner_Y <- make_learner(Lrnr_solnp,learner_function=metalearner_linear,eval_function=loss_squared_error) # nonlinear optimization via augmented Lagrange
-  learner_stack_Y <- make_learner_stack(list("Lrnr_xgboost",nrounds=20, objective = "reg:linear"),list("Lrnr_ranger",num.trees=50), list("Lrnr_ranger",num.trees=100), list("Lrnr_ranger",num.trees=500), list("Lrnr_glmnet",nfolds = n.folds,alpha = 1, family = "gaussian"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0, family = "gaussian"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.25, family = "gaussian"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.5, family = "gaussian"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.75, family = "gaussian")) 
+  learner_stack_Y <- make_learner_stack(list("Lrnr_xgboost",nrounds=20, objective = "reg:squarederror"), list("Lrnr_ranger",num.trees=100), list("Lrnr_ranger",num.trees=500), list("Lrnr_glmnet",nfolds = n.folds,alpha = 1, family = "gaussian"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.25, family = "gaussian"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.5, family = "gaussian"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.75, family = "gaussian")) 
 }else if (outcome.type =="binomial"){
   metalearner_Y <- make_learner(Lrnr_solnp,learner_function=metalearner_logistic_binomial,eval_function=loss_loglik_binomial)
-  learner_stack_Y <- make_learner_stack(list("Lrnr_xgboost",nrounds=20, objective = "reg:logistic"),list("Lrnr_ranger",num.trees=50), list("Lrnr_ranger",num.trees=100), list("Lrnr_ranger",num.trees=500), list("Lrnr_glmnet",nfolds = n.folds,alpha = 1, family = "binomial"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0, family = "binomial"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.25, family = "binomial"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.5, family = "binomial"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.75, family = "binomial")) 
+  learner_stack_Y <- make_learner_stack(list("Lrnr_xgboost",nrounds=20, objective = "reg:logistic"), list("Lrnr_ranger",num.trees=100), list("Lrnr_ranger",num.trees=500), list("Lrnr_glmnet",nfolds = n.folds,alpha = 1, family = "binomial"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.25, family = "binomial"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.5, family = "binomial"), list("Lrnr_glmnet",nfolds = n.folds,alpha = 0.75, family = "binomial")) 
 }
 metalearner_A <- make_learner(Lrnr_solnp,learner_function=metalearner_linear_multinomial, eval_function=loss_loglik_multinomial)
 metalearner_A_bin <- make_learner(Lrnr_solnp,learner_function=metalearner_logistic_binomial,eval_function=loss_loglik_binomial)
@@ -237,6 +248,9 @@ if(use.SL){
   
   if(condition=="none"){
     saveRDS(initial_model_for_Y,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", use.SL, "_", "initial_model_for_Y.rds")) # save model
+    
+    print("VIFs for binomial logistic regression - outcome model")
+    print(vif(initial_model_for_Y))
   }
   
   for(j in 1:J){
@@ -331,7 +345,9 @@ if(est.binomial & use.SL){
   colnames(g_preds_bin) <- colnames(obs.treatment)
   
   if(condition=="none"){
-    saveRDS(initial_model_for_A_sl_fit_bin,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", est.binomial, "_", "initial_model_for_A_sl_fit_bin.rds")) # save model
+    saveRDS(initial_model_for_A_bin,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", use.SL, "_", "initial_model_for_A_bin.rds")) # save model
+    print("VIFs for binomial logistic regression - treatment model")
+    lapply(1:J, function(j) print(vif(initial_model_for_A_bin[[j]])))
   }
   
   # perform checks on propensity scores
