@@ -211,8 +211,8 @@ tic(paste0("Initialize manual TMLE","outcome = ", outcome, "; outcome.type = ", 
 if(use.SL){
   
   # define task and candidate learners
-  initial_model_for_Y_task <- make_sl3_Task(data.frame(Y,L,obs.treatment[,-2]), covariates = c(colnames(L),colnames(obs.treatment[,-2])), outcome = "Y", outcome_type="binomial", 
-                                            folds = origami::make_folds(data.frame(Y,L,obs.treatment[,-2]), fold_fun = folds_vfold, V = n.folds)) # HALOPERIDOL is reference
+  initial_model_for_Y_task <- make_sl3_Task(data.frame(Y,L,obs.treatment), covariates = c(colnames(L),colnames(obs.treatment)), outcome = "Y", outcome_type="binomial", 
+                                            folds = origami::make_folds(data.frame(Y,L,obs.treatment), fold_fun = folds_vfold, V = n.folds))
   
   # Super Learner algorithm
   

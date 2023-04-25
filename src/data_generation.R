@@ -158,7 +158,7 @@ generateData <- function(r, J, n, overlap.setting, gamma.setting, outcome.type, 
     u  <- rnorm(n)
     
     for(j in 1:J){
-      EY[[j]] <- c(X06 %*% gamma_mat[j,])
+      EY[[j]] <- c(X06 %*% gamma_mat[j,] + D[,j]) # incl. treatment dummies
     }
     
     EYs <- sapply(EY,unlist)
@@ -167,7 +167,7 @@ generateData <- function(r, J, n, overlap.setting, gamma.setting, outcome.type, 
   }else{
     Y <- list()
     for(j in 1:J){
-      EY[[j]] <- exp(X06 %*% gamma_mat[j,])
+      EY[[j]] <- exp(X06 %*% gamma_mat[j,] + D[,j]) # incl. treatment dummies
       
       Y[[j]] <- as.integer(rbernoulli(n, p=EY[[j]]/(1+EY[[j]])))
       

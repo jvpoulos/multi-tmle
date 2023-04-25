@@ -36,12 +36,13 @@ Contents
 * ***src/misc_fns***: includes misc. functions, including a function to bound predicted probabilities; functions generate different distributions; and a forest plot function. 
 
 * ***src/tmle_calculation.R***: function for generating counterfactual means across all J treatment levels. Inputs initial Y estimates, bounded predicted treatment probabilities, observed treatment, observed outcomes, and logical flags. Outputs treatment-specific means.
+	+ *iptw*: if TRUE, returns the IPTW estimate instead of TMLE; defaults to FALSE.
 
 * ***src/tmleContrast.R***: function for calculating contrasts across all J treatment levels. Inputs treatment-specific means, the contrast matrix, and logical flags. Outputs ATE and variance estimates. If a binary covariate is supplied, estimates for CATE are also produced. 
+	+ *gcomp*: if TRUE, returns the maximum likelihood based G-computation estimate instead of TMLE; defaults to FALSE. If TRUE, initial outcome model predictions (QAW) must be supplied.
+	+ *iptw*: if TRUE, returns the IPTW estimate instead of TMLE; defaults to FALSE.
 
-* ***tmle_MultinomialTrts.R***: static setting (T=1) simulation, comparing the performance of manual multinomial TMLE with existing implementations using multiple binary treatments, with multiple levels of treatment. Simulates data over multiple runs and compares implementations in terms of bias, coverage, and CI width. The script consists of the following relevant parameters:
-
-	+ *estimator*: Select which estimator to use: 'tmle' for multinomial and multiple binary TMLE or 'lmtp' for TMLE estimation with the LMTP package. 
+* ***tmle_MultinomialTrts.R***: static setting (T=1) simulation, comparing the performance of manual multinomial TMLE with existing implementations using multiple binary treatments, with multiple levels of treatment (also runs IPTW, GCOMP, and AIPTW estimators for comparison). Simulates data over multiple runs and compares implementations in terms of bias, coverage, and CI width. The script consists of the following relevant parameters:
 
 	+ *overlap.setting*: Adjusts overlap setting. If "adequate", overlap scenario of Li and Li (2019); if "inadequate" overlap scenario of Yang et al. (2016); if "rct"; kappa values are all zero, so that treatment probabilities are the same for everyone (mimicking a randomized control trial); if "same.beta", beta values are the same, implying no treatment differences (differences due to covariates, not treatment).
 
@@ -65,8 +66,6 @@ Contents
 
 	+ *n.folds*: number of cross-validation folds for Super Learner. Defaults to 2 and is ignored if *use.SL* is FALSE. 
 
-	+ *doMPI*: logical flag. When TRUE, use MPI parallel processing. Defaults to FALSE.
-
 * ***combine_sim_plots.R*** combine output from ***tmle_MultinomialTrts.R*** and plot. The following parameter must be changed to correpond with the simulation results:
 
 	+ *J*: number of treatments, J={3,6}, corresponding to results. 
@@ -84,9 +83,9 @@ Instructions
 
 1. Install require **R** packages: `Rscript package_list.R`
 
-2. For simulations, run: `Rscript tmle_MultinomialTrts.R [arg1] [arg2] [arg3] [arg4]`; where `[arg1]` specifies the estimator ['tmle' or 'lmtp'],  `[arg2]` is a number specifying the simulation setting [1-18], `[arg3]`  is the outcome type ['binomial' or 'continuous'], and `[arg4]` is a logical flag if super learner estimation is to be used. E.g.,
+2. For simulations, run: `Rscript tmle_MultinomialTrts.R [arg1] [arg2] [arg3] [arg4]`; where `[arg1]` is a number specifying the simulation setting [1-18], `[arg2]`  is the outcome type ['binomial' or 'continuous'], `[arg3]` is a logical flag if super learner estimation is to be used, and `[arg4]` is a logical flag if MPI parallel processing is used. E.g.,
 
-	`Rscript tmle_MultinomialTrts.R 'tmle' 1 'binomial' 'TRUE'`
+	`Rscript tmle_MultinomialTrts.R 1 'binomial' 'TRUE' 'TRUE'`
 
 3. To plot simulation results, run: `Rscript combine_sim_plots.R [arg1]`; where `[arg1]` specifies the output path of the simulation results. E.g., 
 	

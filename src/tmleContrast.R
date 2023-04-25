@@ -1,13 +1,17 @@
 # function for calculating contrasts
-tmle_contrast <- function(Qstar,C, g_preds_bounded, obs.treatment, Y, outcome.type, alpha=0.05, multi.adjust=FALSE, x=NULL){
+tmle_contrast <- function(Qstar, C, g_preds_bounded, obs.treatment, Y, outcome.type, alpha=0.05, gcomp = FALSE, iptw = FALSE, aiptw = FALSE, multi.adjust=FALSE, x=NULL, QAW=NULL){
   # x is binary covariate to condition on for CATE
   
-  if(outcome.type=="binomial"){
-    MuA <- mapply(plogis,Qstar$QA)
-    Mu <- mapply(plogis,Qstar[-1])
+  if(is.null(QAW) & gcomp){
+    stop("Error: QAW must be supplied if gcomp=TRUE")
+  }
+  
+  if(!is.null(Qstar)){
+    MuA <- Qstar[,"QA"] # final TMLE, IPTW, and A-IPTW estimates
+    Mu <- Qstar[,-1]
   }else{
-    MuA <- Qstar$QA
-    Mu <- Qstar[-1]
+    MuA <- QAW$QA # iniital outcome model estimates (gcomp)
+    Mu <- QAW[,-1]
   }
   
   taus <- vector(mode = "list", length = 2) 
@@ -31,7 +35,7 @@ tmle_contrast <- function(Qstar,C, g_preds_bounded, obs.treatment, Y, outcome.ty
     # calculate influence curve
     
     infcurv[[i]] <-  lapply(1:length(taus), function(t){((obs.treatment[,treat_index]/g_preds_bounded[,treat_index])-(obs.treatment[,ref_index]/g_preds_bounded[,ref_index]))*(Y-MuA) + Mu[,treat_index] - Mu[,ref_index] - taus[[t]][i]})
-
+    
     if(!is.null(x)){
       var[[i]] <- lapply(1:length(taus), function(t){var(infcurv[[i]][[t]][which(x==1)])/sum(x)})
     }else{
