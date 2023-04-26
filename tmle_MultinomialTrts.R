@@ -174,7 +174,7 @@ staticSim <- function(r, J, n, gbound, ybound, n.folds, overlap.setting, gamma.s
   
   # calculate contrasts
   tmle_contrasts <- tmle_contrast(Qstar=TMLE, C, g_preds_bounded, obs.treatment, Y, outcome.type, alpha=0.05, gcomp = FALSE, iptw = FALSE, aiptw = FALSE, multi.adjust=FALSE)
-  tmle_contrasts_bin <- tmle_contrast(Qstar=TMLE_bin, C, g_preds_bin_bounded, obs.treatment, Y, outcome.type, alpha=0.05, gcomp = FALSE, iptw = FALSE, aiptw = FALSE,multi.adjust=FALSE)
+  tmle_contrasts_bin <- tmle_contrast(Qstar=TMLE_bin, C, g_preds_bin_bounded, obs.treatment, Y, outcome.type, alpha=0.05, gcomp = FALSE, iptw = FALSE, aiptw = FALSE, multi.adjust=FALSE)
   
   gcomp_contrasts <- tmle_contrast(Qstar=NULL, C, g_preds_bounded, obs.treatment, Y, outcome.type, alpha=0.05, gcomp = TRUE, iptw = FALSE, aiptw = FALSE, multi.adjust=FALSE, QAW=QAW)
   
