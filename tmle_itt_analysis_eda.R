@@ -1,11 +1,10 @@
 #################################################################
 # Descriptive tables and plots for ITT analysis                 #
-# (not longitudinal)                                            #
 #################################################################
 
 print(paste0("Summarizing results from output directory: ", output_dir))
 
-n.estimators <- 4
+n.estimators <- 2
 
 blind.drugs <- TRUE
 slides <- TRUE
@@ -26,14 +25,14 @@ condition.labels <- list("none"=c("all patients"),
 blinded.labels <- c("Reference","A","B","C","D","E")
 
 if(use.SL){
-  estimator.labels <- c("TMLE-Multinomial (super learner)", "TMLE-Binomial (super learner)", "AIPTW-Multinomial (super learner)", "AIPTW-Binomial (super learner)")
+  estimator.labels <- c("TMLE-Multinomial (super learner)", "TMLE-Binomial (super learner)")
 }else{
-  estimator.labels <- c("TMLE-Multinomial (GLM)", "TMLE-Binomial (GLM)", "AIPTW-Multinomial (GLM)", "AIPTW-Binomial (GLM)")
+  estimator.labels <- c("TMLE-Multinomial (GLM)", "TMLE-Binomial (GLM)")
 }
 
 ## Summary statistics table
 
-if(condition=="none" & use.SL){
+if(condition=="none"){
   print(tableNominal(data.frame(L.unscaled,A,Y.combined,Y.death, Y.diabetes)[c("California","Georgia","Iowa",                         
                                                                                "Mississippi","Oklahoma","West_Virginia","black","latino","white","mdd","schiz","year","female",
                                                                                "payer_index_mdcr","preperiod_ever_psych","preperiod_ever_metabolic","preperiod_ever_other","preperiod_ever_mt_gluc_or_lip",
@@ -43,131 +42,7 @@ if(condition=="none" & use.SL){
                                                    "preperiod_cond_nonmhsa","preperiod_cond_injury","preperiod_los_mhsa","preperiod_los_nonmhsa","preperiod_los_injury")], group=A, prec = 3, cumsum=FALSE, stats= c("n", "min", "mean", "max", "s"), longtable = FALSE))
 }
 
-if(outcome=="combined" & condition=="none" & use.SL==TRUE){
-  
-  ## Density plot comparing individual probs. of treatment (multinomial- unbounded)
-  
-  print("unbounded treatment probs - multinomial")
-  print(summary(g_preds))
-  
-  if(blind.drugs){
-    colnames(g_preds) <- blinded.labels
-  }else{
-    colnames(g_preds) <- proper(colnames(g_preds))
-  }
-  
-  treatment.probs.m <- melt(g_preds)
-  
-  propensity.plot.multinomial <- ggplot(treatment.probs.m,aes(x=value, fill=Var2)) + 
-    geom_density(alpha=0.35) +
-    scale_x_continuous(breaks = seq(0,0.8,0.2)) +
-    ylab("Density") +
-    xlab(paste0("Estimated treatment probability"))+ 
-    labs(fill = "Treatment") +
-    theme(legend.position="bottom") +   theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
-    theme(axis.title=element_text(family="serif", size=16)) +
-    theme(axis.text.y=element_text(family="serif", size=14)) +
-    theme(axis.text.x=element_text(family="serif", size=14)) +
-    theme(legend.text=element_text(family="serif", size = 14)) +
-    theme(legend.title=element_text(family="serif", size = 14)) +
-    theme(strip.text.x = element_text(family="serif", size = 14)) +
-    theme(strip.text.y = element_text(family="serif", size = 14)) +
-    theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l =0))) +
-    theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l =0))) +
-    theme(panel.spacing = unit(1, "lines"))
-  
-  if(blind.drugs){
-    if(slides){
-      ggsave(paste0(output_dir, outcome, "_",condition, "_use_SL_",use.SL, "_propensity_plot_multinomial_blinded_slides.png"),propensity.plot.multinomial+ggtitle(paste0("Implementation: ", estimator.labels[1])), scale=1.25)
-    } else{
-      ggsave(paste0(output_dir, outcome, "_",condition, "_use_SL_",use.SL, "_propensity_plot_multinomial_blinded.png"),propensity.plot.multinomial, scale=1.25)
-    }
-  }
-  ggsave(paste0(output_dir, outcome, "_",condition, "_use_SL_",use.SL, "_propensity_plot_multinomial.png"),propensity.plot.multinomial, scale=1.25)
-  
-  # multiple binary treatment probs. 
-  
-  print("unbounded treatment probs - multiple binary")
-  print(summary(g_preds_bin))
-  
-  if(blind.drugs){
-    colnames(g_preds_bin) <- blinded.labels
-  }else{
-    colnames(g_preds_bin) <- proper(colnames(g_preds_bin))
-  }
-  
-  treatment.probs.bin.m <- melt(g_preds_bin)
-  propensity.plot.bin <- ggplot(treatment.probs.bin.m,aes(x=value, fill=Var2)) + 
-    geom_density(alpha=0.35) +
-    scale_x_continuous(breaks = seq(0,0.8,0.2)) +
-    ylab("Density") +
-    xlab(paste0("Estimated treatment probability"))+ 
-    labs(fill = "Treatment") +
-    theme(legend.position="bottom") +   theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
-    theme(axis.title=element_text(family="serif", size=16)) +
-    theme(axis.text.y=element_text(family="serif", size=14)) +
-    theme(axis.text.x=element_text(family="serif", size=14)) +
-    theme(legend.text=element_text(family="serif", size = 14)) +
-    theme(legend.title=element_text(family="serif", size = 14)) +
-    theme(strip.text.x = element_text(family="serif", size = 14)) +
-    theme(strip.text.y = element_text(family="serif", size = 14)) +
-    theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l =0))) +
-    theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l =0))) +
-    theme(panel.spacing = unit(1, "lines"))
-  
-  if(blind.drugs){
-    if(slides){
-      ggsave(paste0(output_dir, outcome, "_",condition, "_use_SL_",use.SL, "_propensity_plot_bin_blinded_slides.png"),propensity.plot.bin+ggtitle(paste0("Implementation: ", estimator.labels[2])), scale=1.25)
-    } else{
-      ggsave(paste0(output_dir, outcome, "_",condition, "_use_SL_",use.SL, "_propensity_plot_bin_blinded.png"),propensity.plot.bin, scale=1.25)
-    }
-  }
-  
-  ggsave(paste0(output_dir, outcome, "_",condition, "_use_SL_",use.SL, "_propensity_plot_binomial.png"),propensity.plot.bin, scale=1.25)
-  
-  ## Plot comparing estimated vs. observed treatment (overlap)
-  obs.treatment <- dummify(A) # dummy matrix
-  for(estimator in estimator.labels){
-    for(j in 1:ncol(obs.treatment)){
-      if(estimator %in% c("Multinomial (super learner)","Multinomial (GLM)")){
-        obs.treatment.probs <- g_preds*obs.treatment[,j]
-      }else if (estimator %in% c("Binomial (super learner)","Binomial (GLM)")){
-        obs.treatment.probs <- g_preds_bin*obs.treatment[,j]
-      }
-      
-      est.obs.treat <- data.frame("est"=c(c(t(obs.treatment.probs[rowSums(obs.treatment.probs[, -1])>0, ]))),
-                                  "Estimator"=c(rep(estimator,length.out=length(c(t(obs.treatment.probs[rowSums(obs.treatment.probs[, -1])>0, ]))))),
-                                  "Treatment"=c(rep(colnames(g_preds),length.out=length(c(t(obs.treatment.probs[rowSums(obs.treatment.probs[, -1])>0, ]))))))
-      est.obs.treat.m  <- melt(est.obs.treat, id.vars=c("Estimator","Treatment"))
-      
-      ggplot(est.obs.treat.m[which(est.obs.treat.m$Estimator==estimator),],
-             aes(x=value, fill=Treatment)) +
-        geom_density(alpha=0.35) +
-        xlab("Estimated treatment probability") + ylab("Density") + ggtitle(paste0("Patients assigned to ", colnames(g_preds)[j]))  +
-        labs(fill = "Treatment") +
-        theme(legend.position="bottom") +   theme(plot.title = element_text(hjust = 0.5, family="serif", size=16), plot.subtitle = element_text(hjust = 0.5, family="serif", size=12)) +
-        theme(axis.title=element_text(family="serif", size=16)) +
-        theme(axis.text.y=element_text(family="serif", size=14)) +
-        theme(axis.text.x=element_text(family="serif", size=14)) +
-        theme(legend.text=element_text(family="serif", size = 14)) +
-        theme(legend.title=element_text(family="serif", size = 14)) +
-        theme(strip.text.x = element_text(family="serif", size = 14)) +
-        theme(strip.text.y = element_text(family="serif", size = 14)) +
-        theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l =0))) +
-        theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l =0))) +
-        theme(panel.spacing = unit(1, "lines"))
-      
-      if(blind.drugs){
-        if(slides){
-          ggsave(paste0(output_dir,"tmle_", outcome, "_", condition, "_use_SL_",use.SL, "_itt_overlap_",colnames(g_preds)[j],"_estimator_",estimator,"blinded_slides.png"), plot=last_plot()+ggtitle(paste0("Implementation: ", estimator), subtitle=paste0("Patients assigned to ", colnames(g_preds)[j])), scale=1.25)
-        } else{
-          ggsave(paste0(output_dir,"tmle_", outcome, "_", condition, "_use_SL_",use.SL, "_itt_overlap_",colnames(g_preds)[j],"_estimator_",estimator,"_blinded.png"), plot=last_plot(), scale=1.25)
-        }
-      }else{
-        ggsave(paste0(output_dir,"tmle_", outcome, "_", condition, "_use_SL_",use.SL, "_itt_overlap_",colnames(g_preds)[j],"_estimator_",estimator,".png"), plot=last_plot(), scale=1.25)
-      }
-    }
-  }
+if(outcome=="combined" & condition=="none" & use.SL){
   
   ## Print share bounded
   print(paste0("% truncated, multinomial: ", colSums((g_preds > gbound[2]) | g_preds < gbound[1])/n))
@@ -198,17 +73,17 @@ if(blind.drugs){
 }
 
 ates.dat <- data.frame(x =rep(comparisons,n.estimators),
-                       y = c(ATE_tmle,ATE_tmle_bin, ATE_aiptw,ATE_aiptw_bin), 
-                       y.lo = c(ATE_CI_tmle_lower,ATE_CI_tmle_bin_lower,ATE_CI_aiptw_lower,ATE_CI_aiptw_bin_lower), 
-                       y.hi = c(ATE_CI_tmle_upper,ATE_CI_tmle_bin_upper,ATE_CI_aiptw_upper,ATE_CI_aiptw_bin_upper))
+                       y = c(ATE_tmle,ATE_tmle_bin), 
+                       y.lo = c(ATE_CI_tmle_lower,ATE_CI_tmle_bin_lower), 
+                       y.hi = c(ATE_CI_tmle_upper,ATE_CI_tmle_bin_upper))
 
 ates.dat$x <- as.factor(ates.dat$x)
 
-ates.dat$Analysis <- c(rep("TMLE-Multinomial",each=length(comparisons)), rep("TMLE-Binomial",each=length(comparisons)), rep("AIPTW-Multinomial",each=length(comparisons)), rep("AIPTW-Binomial",each=length(comparisons)))
+ates.dat$Analysis <- c(rep("TMLE-Multinomial (super learner)",each=length(comparisons)), rep("TMLE-Binomial (super learner)",each=length(comparisons)))
 
 saveRDS(ates.dat,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_use_SL_",use.SL,  "_", condition, "_", use.SL, "_","ates_dat.rds"))
 
-if(use.SL==TRUE & condition!="none"){
+if(use.SL & condition!="none"){
   
   estimand <- TeX('$CATE_{j,j^*}$')
   
@@ -219,11 +94,11 @@ if(use.SL==TRUE & condition!="none"){
   
   cates.dat$x <- as.factor(cates.dat$x)
   
-  cates.dat$Analysis <- c(rep("Multinomial (super learner)",each=length(comparisons)),rep("Binomial (super learner)",each=length(comparisons)))
+  cates.dat$Analysis <- c(rep("TMLE-Multinomial (super learner)",each=length(comparisons)),rep("TMLE-Binomial (super learner)",each=length(comparisons)))
   
   cate.plot <- ForestPlot(cates.dat,
                           xlab=estimand,ylab="Treatment drug") +
-    labs(color="TMLE:") +
+    labs(color="Estimator:") +
     scale_x_discrete(limits = rev) +
     theme(legend.position = "bottom",legend.margin=margin(0,0,0,0), legend.justification="left",
           legend.box.margin=margin(-5,-5,-5,-5),legend.text=element_text(size=10)) +
@@ -255,15 +130,15 @@ if(use.SL==TRUE & condition!="none"){
   }
   if(blind.drugs){
     if(slides){
-      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_itt_CATE_blinded_slides.png"), plot=cate.plot, scale=1.3)
+      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_use_SL_",use.SL, "_itt_CATE_blinded_slides.png"), plot=cate.plot, scale=1.3)
     }else{
-      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_itt_CATE_blinded.png"), plot=cate.plot, scale=1.25)
+      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_use_SL_",use.SL, "_itt_CATE_blinded.png"), plot=cate.plot, scale=1.25)
     }
   }else{
     if(slides){
-      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_itt_CATE_slides.png"), plot=cate.plot, scale=1.25)
+      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_use_SL_",use.SL, "_itt_CATE_slides.png"), plot=cate.plot, scale=1.25)
     }else{
-      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_itt_CATE.png"), plot=cate.plot, scale=1.25)
+      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_use_SL_",use.SL, "_itt_CATE.png"), plot=cate.plot, scale=1.25)
     }
   }
   
@@ -305,15 +180,15 @@ if(use.SL==TRUE & condition!="none"){
   
   if(blind.drugs){
     if(slides){
-      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_itt_ATE_blinded_slides.png"), plot=ate.plot, scale=1.3)
+      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_use_SL_",use.SL, "_itt_ATE_blinded_slides.png"), plot=ate.plot, scale=1.3)
     }else{
-      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_itt_ATE_blinded.png"), plot=ate.plot+theme(legend.position = "none"), scale=1.25)
+      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_use_SL_",use.SL, "_itt_ATE_blinded.png"), plot=ate.plot+theme(legend.position = "none"), scale=1.25)
     }
   }else{
     if(slides){
-      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_itt_ATE_slides.png"), plot=ate.plot, scale=1.25)
+      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_use_SL_",use.SL, "_itt_ATE_slides.png"), plot=ate.plot, scale=1.25)
     }else{
-      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_itt_ATE.png"), plot=ate.plot+theme(legend.position = "none"), scale=1.25)
+      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_use_SL_",use.SL, "_itt_ATE.png"), plot=ate.plot+theme(legend.position = "none"), scale=1.25)
     }
   }
 }

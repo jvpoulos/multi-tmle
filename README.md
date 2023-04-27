@@ -91,6 +91,6 @@ Instructions
 	
 	`Rscript combine_sim_plots.R 'outputs/20220504'`
 
-4. For ITT analysis on simulated data, run in bash script: `Rscript tmle_itt_analysis.R [arg1] [arg2] [arg3] [arg4] [arg5] [arg6]`; where `[arg1]` specifies the outcome ['combined', 'diabetes', or 'death'] ('combined' is death or diabetes),  `[arg2]`  is the outcome type ['binomial'], `[arg3]`  is the condition for conditional average treatment effects ['schizophrenia', 'mdd','black','latino','white', or 'none'], `[arg4]` is a string that specified the folder of previously saved super learner models or 'none', `[arg5]` is a logical flag if super learner estimation is to be used, `[arg6]` is a logical flag if simulated data is to be used. E.g., 
+4. For ITT analysis on simulated data, run in bash script: `Rscript tmle_itt_analysis.R [arg1] [arg2] [arg3] [arg4] [arg5] [arg6]`; where `[arg1]` specifies the outcome ['combined', 'diabetes', or 'death'] ('combined' is death or diabetes),  `[arg2]`  is the outcome type ['binomial'], `[arg3]`  is the condition for conditional average treatment effects ['schizophrenia', 'mdd','black','latino','white', or 'none'], `[arg4]` is a string that specifies the folder in the output directory of previously saved super learner models or 'none' (if the outcome is not 'combined', loads treatment model only), `[arg5]` is a logical flag if super learner estimation is to be used, `[arg6]` is a logical flag if simulated data is to be used. E.g., 
 
-	`Rscript tmle_itt_analysis.R 'combined' 'binomial' 'none' 'none' TRUE' 'TRUE'`
+	`Rscript tmle_itt_analysis.R 'combined' 'binomial' 'none' '20230427/' 'TRUE' 'TRUE'`

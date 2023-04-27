@@ -100,19 +100,10 @@ A <- factor(cms.data$drug_group) # categorical
 obs.treatment <- dummify(A) # dummy matrix
 
 # covariates
-if(use.SL==FALSE){
-  L.unscaled <- cbind(dummify(factor(cms.data$state_character),show.na = FALSE)[,-c(6)],
-                      dummify(factor(cms.data$race_defined_character),show.na = FALSE)[,-c(3)], 
-                      dummify(factor(cms.data$smi_condition))[,-c(1)], # omit bipolar
-                      "payer_index_mdcr"=dummify(factor(cms.data$payer_index))[,2])
-}else{
-  L.unscaled <- cbind(dummify(factor(cms.data$state_character),show.na = FALSE),
-                      dummify(factor(cms.data$race_defined_character),show.na = FALSE), 
-                      dummify(factor(cms.data$smi_condition)),
-                      dummify(factor(cms.data$payer_index)))
-}
-
-L.unscaled <- cbind(L.unscaled,
+L.unscaled <- cbind(dummify(factor(cms.data$state_character),show.na = FALSE)[,-c(6)],
+                    dummify(factor(cms.data$race_defined_character),show.na = FALSE)[,-c(3)], 
+                    dummify(factor(cms.data$smi_condition))[,-c(1)], # omit bipolar
+                    "payer_index_mdcr"=dummify(factor(cms.data$payer_index))[,2],
                     "year"=cms.data$year, 
                     "female"=cms.data$female, 
                     "preperiod_ever_psych"=cms.data$preperiod_ever_psych,
@@ -132,7 +123,7 @@ L.unscaled <- cbind(L.unscaled,
                     "preperiod_cond_injury"=cms.data$preperiod_cond_injury,
                     "preperiod_los_mhsa"=cms.data$preperiod_los_mhsa,
                     "preperiod_los_nonmhsa"=cms.data$preperiod_los_nonmhsa,
-                    "preperiod_los_injury"=cms.data$preperiod_los_injury) 
+                    "preperiod_los_injury"=cms.data$preperiod_los_injury)
 
 rm(cms.data)
 
@@ -229,8 +220,8 @@ if(use.SL){
   initial_model_for_Y_sl <- make_learner(Lrnr_sl, # cross-validates base models
                                          learners = learner_stack_Y,
                                          metalearner = metalearner_Y,
-                                         keep_extra=FALSE)
-  if(weights.loc!='none'){
+                                         keep_extra=TRUE)
+  if(weights.loc!='none' & outcome=='combined'){ # only load treatment models when outcome is 'diabetes' or 'death'
     initial_model_for_Y_sl_fit <-  readRDS(paste0(output_dir, 
                                                   "tmle_", outcome,"_",outcome.type, "_", condition, "_", use.SL, "_", use.simulated,"_",
                                                   "initial_model_for_Y_sl_fit.rds"))
@@ -239,7 +230,6 @@ if(use.SL){
     saveRDS(initial_model_for_Y_sl_fit,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", use.SL, "_", use.simulated,"_", "initial_model_for_Y_sl_fit.rds")) # save model
   }
   initial_model_for_Y_preds <- initial_model_for_Y_sl_fit$predict(initial_model_for_Y_task) # predicted probs.
-  
   
   if(outcome=="combined" & condition=="none" & outcome.type =="binomial"){
     Y.risks <- initial_model_for_Y_sl_fit$cv_risk(loss_loglik_binomial)
@@ -293,10 +283,10 @@ if(use.SL){
   initial_model_for_A_sl <- make_learner(Lrnr_sl, # cross-validates base models
                                          learners = learner_stack_A,
                                          metalearner = metalearner_A,
-                                         keep_extra=FALSE)
+                                         keep_extra=TRUE)
   if(weights.loc!='none'){
-    initial_model_for_A_sl_fit <-  readRDS(paste0(output_dir, 
-                                                  "tmle_", outcome,"_",outcome.type, "_", condition, "_", use.SL, "_", use.simulated,"_",
+    initial_model_for_A_sl_fit <-  readRDS(paste0(output_dir, # use combined outcome model
+                                                  "tmle_", "combined","_",outcome.type, "_", condition, "_", use.SL, "_", use.simulated,"_",
                                                   "initial_model_for_A_sl_fit.rds"))
   }else{
     initial_model_for_A_sl_fit <- initial_model_for_A_sl$train(initial_model_for_A_task)
@@ -309,6 +299,11 @@ if(use.SL){
   
   colnames(g_preds) <- colnames(obs.treatment)
   
+  if(outcome=="combined" & condition=="none" & use.SL){
+    A.risks <- initial_model_for_A_sl_fit$cv_risk(loss_loglik_multinomial)
+    print("Treatment model - multinomial - SL CV risk")
+    print(A.risks)
+  }
   
   # binomial 
   
@@ -320,21 +315,26 @@ if(use.SL){
   initial_model_for_A_sl_bin <- make_learner(Lrnr_sl, # cross-validates base models
                                              learners = learner_stack_A_bin,
                                              metalearner = metalearner_A_bin,
-                                             keep_extra=FALSE)
+                                             keep_extra=TRUE)
   
-  if(weights.loc!='none'){
+  if(weights.loc!='none'){ # use combined outcome model
     initial_model_for_A_sl_fit_bin <-  readRDS(paste0(output_dir, 
-                                                      "tmle_", outcome,"_",outcome.type, "_", condition, "_", use.SL, "_", use.simulated,"_",
+                                                      "tmle_", "combined","_",outcome.type, "_", condition, "_", use.SL, "_", use.simulated,"_",
                                                       "initial_model_for_A_sl_fit_bin.rds"))
   }else{
     initial_model_for_A_sl_fit_bin <- lapply(1:J, function(j) initial_model_for_A_sl_bin$train(initial_model_for_A_task_bin[[j]]))
-    saveRDS(initial_model_for_A_bin,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", use.SL, "_", use.simulated,"_","initial_model_for_A_bin.rds")) # save model
+    saveRDS(initial_model_for_A_sl_fit_bin,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", use.SL, "_", use.simulated,"_","initial_model_for_A_sl_fit_bin.rds")) # save model
   }
   
   g_preds_bin  <- sapply(1:J, function(j) initial_model_for_A_sl_fit_bin[[j]]$predict(initial_model_for_A_task_bin[[j]]))  # estimated propensity scores 
   
   colnames(g_preds_bin) <- colnames(obs.treatment)
   
+  if(outcome=="combined" & condition=="none" & use.SL){
+    A.risks.bin <- lapply(1:J, function(j) initial_model_for_A_sl_fit_bin[[j]]$cv_risk(loss_loglik_binomial))
+    print("Treatment model - binomial - SL CV risk")
+    print(A.risks.bin)
+  }
 } else{
   
   # multinomial logistic regression
@@ -359,18 +359,6 @@ if(use.SL){
     print("VIFs for binomial logistic regression - treatment model")
     lapply(1:J, function(j) print(vif(initial_model_for_A_bin[[j]])))
   }
-}
-
-if(outcome=="combined" & condition=="none" & use.SL){
-  A.risks <- initial_model_for_A_sl_fit$cv_risk(loss_loglik_multinomial)
-  print("Treatment model - multinomial - SL CV risk")
-  print(A.risks)
-}
-
-if(outcome=="combined" & condition=="none" & use.SL){
-  A.risks.bin <- initial_model_for_A_sl_fit_bin$cv_risk(loss_loglik_binomial)
-  print("Treatment model - binomial - SL CV risk")
-  print(A.risks.bin)
 }
 
 # propensity scores
@@ -401,7 +389,7 @@ if(condition=="none"){
   tmle_contrasts_bin <- tmle_contrast(Qstar=TMLE_bin, C, g_preds_bin_bounded, obs.treatment, Y, outcome.type, alpha=0.05, gcomp = FALSE, iptw = FALSE, aiptw = FALSE, multi.adjust=FALSE, x)
 }
 
-gcomp_contrasts <- tmle_contrast(Qstar=NULL, C, g_preds_bounded, obs.treatment, Y, outcome.type, alpha=0.05, gcomp = TRUE, iptw = FALSE, aiptw = FALSE, multi.adjust=FALSE, QAW=QAW)
+gcomp_contrasts <- tmle_contrast(Qstar=NULL, C, g_preds_bounded=NULL, obs.treatment, Y, outcome.type, alpha=0.05, gcomp = TRUE, iptw = FALSE, aiptw = FALSE, multi.adjust=FALSE, QAW=QAW)
 
 iptw_contrasts <- tmle_contrast(Qstar=IPTW, C, g_preds_bounded, obs.treatment, Y, outcome.type, alpha=0.05, gcomp = FALSE, iptw = TRUE, aiptw = FALSE, multi.adjust=FALSE)
 iptw_contrasts_bin <- tmle_contrast(Qstar=IPTW_bin, C, g_preds_bin_bounded, obs.treatment, Y, outcome.type, alpha=0.05, gcomp = FALSE, iptw = TRUE, aiptw = FALSE, multi.adjust=FALSE)

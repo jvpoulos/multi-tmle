@@ -176,7 +176,7 @@ staticSim <- function(r, J, n, gbound, ybound, n.folds, overlap.setting, gamma.s
   tmle_contrasts <- tmle_contrast(Qstar=TMLE, C, g_preds_bounded, obs.treatment, Y, outcome.type, alpha=0.05, gcomp = FALSE, iptw = FALSE, aiptw = FALSE, multi.adjust=FALSE)
   tmle_contrasts_bin <- tmle_contrast(Qstar=TMLE_bin, C, g_preds_bin_bounded, obs.treatment, Y, outcome.type, alpha=0.05, gcomp = FALSE, iptw = FALSE, aiptw = FALSE, multi.adjust=FALSE)
   
-  gcomp_contrasts <- tmle_contrast(Qstar=NULL, C, g_preds_bounded, obs.treatment, Y, outcome.type, alpha=0.05, gcomp = TRUE, iptw = FALSE, aiptw = FALSE, multi.adjust=FALSE, QAW=QAW)
+  gcomp_contrasts <- tmle_contrast(Qstar=NULL, C, g_preds_bounded=NULL, obs.treatment, Y, outcome.type, alpha=0.05, gcomp = TRUE, iptw = FALSE, aiptw = FALSE, multi.adjust=FALSE, QAW=QAW)
   
   iptw_contrasts <- tmle_contrast(Qstar=IPTW, C, g_preds_bounded, obs.treatment, Y, outcome.type, alpha=0.05, gcomp = FALSE, iptw = TRUE, aiptw = FALSE, multi.adjust=FALSE)
   iptw_contrasts_bin <- tmle_contrast(Qstar=IPTW_bin, C, g_preds_bin_bounded, obs.treatment, Y, outcome.type, alpha=0.05, gcomp = FALSE, iptw = TRUE, aiptw = FALSE, multi.adjust=FALSE)
@@ -344,7 +344,7 @@ if(doMPI){
 
 print(paste0('simulation setting: ', " R = ", R, ", n = ", n,", J = ",J, ", overlap.setting = ",overlap.setting, ", gamma.setting = ", gamma.setting, ", outcome.type = ", outcome.type, ", use.SL = ",use.SL, ", scale.continuous = ", scale.continuous))
 
-sim.results <- foreach(r = 1:R, .combine='cbind', .verbose = TRUE) %dopar% {
+sim.results <- foreach(r = 1:R, .combine='cbind', .verbose = FALSE) %dopar% {
   staticSim(r=r, J, n, gbound, ybound, n.folds, overlap.setting, gamma.setting, outcome.type, target.gwt, use.SL, scale.continuous)
 }
 sim.results
