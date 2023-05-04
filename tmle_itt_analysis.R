@@ -221,7 +221,7 @@ if(use.SL){
                                          learners = learner_stack_Y,
                                          metalearner = metalearner_Y,
                                          keep_extra=TRUE)
-  if(weights.loc!='none' & outcome=='combined'){ # only load treatment models when outcome is 'diabetes' or 'death'
+  if(weights.loc!='none'){
     initial_model_for_Y_sl_fit <-  readRDS(paste0(output_dir, 
                                                   "tmle_", outcome,"_",outcome.type, "_", condition, "_", use.SL, "_", use.simulated,"_",
                                                   "initial_model_for_Y_sl_fit.rds"))
@@ -239,8 +239,9 @@ if(use.SL){
   
   for(j in 1:J){
     newdata <- data.frame(Y,L,matrix(0, nrow=nrow(obs.treatment), ncol=ncol(obs.treatment), dimnames = dimnames(obs.treatment)))
-    newdata[paste0("D",j)] <- 1
+    newdata[,which(colnames(newdata)==colnames(obs.treatment)[j])] <- 1
     assign(paste0("Q",j), initial_model_for_Y_sl_fit$predict(sl3_Task$new(newdata, covariates = c(colnames(L),colnames(obs.treatment)), outcome = "Y", outcome_type="binomial")))
+    rm(newdata)
   }
 } else{
   if(outcome.type=="continuous"){
@@ -260,11 +261,11 @@ if(use.SL){
   
   for(j in 1:J){
     newdata <- data.frame(cbind(Y,L,matrix(0, nrow=nrow(obs.treatment), ncol=ncol(obs.treatment), dimnames = dimnames(obs.treatment))))
-    newdata[paste0("D",j)] <- 1
+    newdata[,which(colnames(newdata)==colnames(obs.treatment)[j])] <- 1
     assign(paste0("Q",j), predict(initial_model_for_Y,newdata=data.frame(newdata), type="response"))
+    rm(newdata)
   }
 }
-rm(newdata)
 
 Qs <- t(do.call(mapply, c(FUN = cbind, mget(paste0("Q", 1:J)))))
 colnames(Qs) <- paste0("Q", 1:J)

@@ -87,9 +87,9 @@ Instructions
 
 	`Rscript tmle_MultinomialTrts.R 1 'binomial' 'TRUE' 'TRUE'`
 
-3. To plot simulation results, run: `Rscript combine_sim_plots.R [arg1]`; where `[arg1]` specifies the output path of the simulation results. E.g., 
+3. To plot simulation results, run: `Rscript combine_sim_plots.R [arg1]`; where `[arg1]` specifies the output path of the simulation results; `[arg2]` specifies the number of treatments [3,6]; `[arg3]` specifies is a logical flag if super learner estimates are to be used (if 'FALSE', GLM estimates are used). E.g., 
 	
-	`Rscript combine_sim_plots.R 'outputs/20220504'`
+	`Rscript combine_sim_plots.R 'outputs/20230427' 6 'TRUE'`
 
 4. For ITT analysis on simulated data, run in bash script: `Rscript tmle_itt_analysis.R [arg1] [arg2] [arg3] [arg4] [arg5] [arg6]`; where `[arg1]` specifies the outcome ['combined', 'diabetes', or 'death'] ('combined' is death or diabetes),  `[arg2]`  is the outcome type ['binomial'], `[arg3]`  is the condition for conditional average treatment effects ['schizophrenia', 'mdd','black','latino','white', or 'none'], `[arg4]` is a string that specifies the folder in the output directory of previously saved super learner models or 'none' (if the outcome is not 'combined', loads treatment model only), `[arg5]` is a logical flag if super learner estimation is to be used, `[arg6]` is a logical flag if simulated data is to be used. E.g., 
 

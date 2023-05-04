@@ -4,7 +4,7 @@
 
 print(paste0("Summarizing results from output directory: ", output_dir))
 
-n.estimators <- 2
+n.estimators <- 5
 
 blind.drugs <- TRUE
 slides <- TRUE
@@ -25,9 +25,9 @@ condition.labels <- list("none"=c("all patients"),
 blinded.labels <- c("Reference","A","B","C","D","E")
 
 if(use.SL){
-  estimator.labels <- c("TMLE-Multinomial (super learner)", "TMLE-Binomial (super learner)")
+  estimator.labels <- c("TMLE-multi. (SL)", "TMLE-bin. (SL)", "G-Comp. (SL)", "IPTW-multi. (SL)", "IPTW-bin. (SL)")
 }else{
-  estimator.labels <- c("TMLE-Multinomial (GLM)", "TMLE-Binomial (GLM)")
+  estimator.labels <- c("TMLE-multi. (GLM)", "TMLE-bin. (GLM)", "G-Comp. (GLM)", "IPTW-multi. (GLM)", "IPTW-bin. (GLM)")
 }
 
 ## Summary statistics table
@@ -146,29 +146,32 @@ if(use.SL & condition!="none"){
   estimand <- TeX('$ATE_{j,j^*}$')
   
   ate.plot <- ForestPlot(ates.dat,
-                         xlab=estimand,ylab="Treatment drug") +
-    labs(color="Estimator:") +
+                         xlab=estimand,ylab="Treatment") +
+  #  scale_colour_manual(values= c(gg_color_hue(3)[1],gg_color_hue(3)[3])) +
+    labs(color="Estimator: ") +
     scale_x_discrete(limits = rev) +
-    theme(legend.position = "bottom",legend.margin=margin(0,0,0,0), legend.justification="left",
-          legend.box.margin=margin(-5,-5,-5,-5),legend.text=element_text(size=8)) +
-    theme(plot.title = element_text(hjust = 0.5, family="serif", size=14), plot.subtitle = element_text(hjust = 0.5, family="serif", size=12)) +
-    theme(axis.title=element_text(family="serif", size=14)) +
-    theme(axis.text.y=element_text(family="serif", size=10)) +
-    theme(axis.text.x=element_text(family="serif", size=10,angle = 45, vjust = 0.5, hjust=1)) +
-    theme(strip.text.x = element_text(family="serif", size = 10)) +
-    theme(strip.text.y = element_text(family="serif", size = 10)) +
-    theme(axis.title.y = element_text(margin = margin(t = 0, r = 10, b = 0, l =0))) +
-    theme(axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l =0))) +
+    # theme(legend.position = "bottom",legend.margin=margin(1,5,5,5), legend.justification="center",
+    #       legend.box.margin=margin(0,0,0,0),legend.text=element_text(size=14), legend.key.width = unit(0.75, "cm"), legend.spacing.x = unit(0.75, 'cm'), legend.spacing.y = unit(0.75, 'cm')) +
+     theme(plot.title = element_text(hjust = 0.5, family="serif", size=16), plot.subtitle = element_text(hjust = 0.5, family="serif", size=14)) +
+    theme(axis.title=element_text(family="serif", size=16)) +
+    theme(axis.text.y=element_text(family="serif", size=16)) +
+    theme(axis.text.x=element_text(family="serif", size=14, angle = 0, vjust = 0.5, hjust=0.25)) +#angle = 45, , hjust=1
+    theme(legend.text=element_text(family="serif", size=16)) +
+    theme(legend.title=element_text(family="serif", size=16)) +
+    theme(strip.text.x = element_text(family="serif", size=16)) +
+    theme(strip.text.y = element_text(family="serif", size=16)) +
+    theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l =0))) +
+    theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l =0))) +
     theme(panel.spacing = unit(1, "lines"))
   
   ate.plot <- ate.plot +
-    annotate("segment", x = 0.5, xend = 0.5, y = 0.002, yend = 0.025,
+    annotate("segment", x = 0.5, xend = 0.5, y = 0.01, yend = 0.03,
              colour = "blue", size = 1, arrow = arrow(length = unit(0.1, "inches"), ends="last", type="closed")) +
-    annotate("segment", x = 0.5, xend = 0.5, y = -0.002, yend = -0.025,
+    annotate("segment", x = 0.5, xend = 0.5, y = -0.01, yend = -0.03,
              colour = "blue", size = 1, arrow = arrow(length = unit(0.1, "inches"), ends="last", type="closed")) +
-    annotate("text", x = 0.65, y = -0.012, label = "Favors treatment")
+    annotate("text", x = 0.65, y = -0.02, label = "Favors treatment")
   
-  ate.plot <- ate.plot + annotate("text", x = 0.65, y = 0.012, label = "Favors Reference") 
+  ate.plot <- ate.plot + annotate("text", x = 0.65, y = 0.02, label = "Favors Reference") 
   
   if(slides){
     if(condition=="none"){
@@ -188,7 +191,15 @@ if(use.SL & condition!="none"){
     if(slides){
       ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_use_SL_",use.SL, "_itt_ATE_slides.png"), plot=ate.plot, scale=1.25)
     }else{
-      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_use_SL_",use.SL, "_itt_ATE.png"), plot=ate.plot+theme(legend.position = "none"), scale=1.25)
+      ggsave(paste0(output_dir,"tmle_", outcome, "_",condition, "_use_SL_",use.SL, "_itt_ATE.png"), plot=ate.plot+theme(legend.position = "none"))
     }
   }
+  
+  # get legend plot
+  legend <- cowplot::get_legend(ate.plot)
+  
+  png(paste0(output_dir,"tmle_", outcome, "_",condition, "_use_SL_",use.SL, "_legend.png"),width = 380, height = 380)
+  grid.newpage()
+  grid.draw(legend)
+  dev.off() # Close the file
 }
