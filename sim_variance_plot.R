@@ -33,6 +33,8 @@ gamma.setting <- c("zero","low","yang")
 
 estimators <- c("tmle","tmle_bin", "tmle_glm", "gcomp", "iptw", "iptw_bin", "aiptw", "aiptw_bin")
 
+estimator.color <- c("#F8766D","#A3A500","#FF6C90","#00BF7D","#00B0F6","#E76BF3")
+
 n.estimators <- as.numeric(length(estimators))
 
 filenames <- c(list.files(path=output.path, pattern = ".rds", full.names = TRUE))
@@ -156,30 +158,6 @@ labeller3 <- function(variable,value){
   return(variable_names3[value])
 }
 
-if(J==6){
-  x.labels <- c('21'=parse(text = TeX(paste0('$\\lambda_{21}$'))),
-                '31'=parse(text = TeX(paste0('$\\lambda_{31}$'))),
-                '32'=parse(text = TeX(paste0('$\\lambda_{32}$'))),
-                '41'=parse(text = TeX(paste0('$\\lambda_{41}$'))),
-                '42'=parse(text = TeX(paste0('$\\lambda_{42}$'))),
-                '43'=parse(text = TeX(paste0('$\\lambda_{43}$'))),
-                '51'=parse(text = TeX(paste0('$\\lambda_{51}$'))),
-                '52'=parse(text = TeX(paste0('$\\lambda_{52}$'))),
-                '53'=parse(text = TeX(paste0('$\\lambda_{53}$'))),
-                '54'=parse(text = TeX(paste0('$\\lambda_{54}$'))),
-                '61'=parse(text = TeX(paste0('$\\lambda_{61}$'))),
-                '62'=parse(text = TeX(paste0('$\\lambda_{62}$'))),
-                '63'=parse(text = TeX(paste0('$\\lambda_{63}$'))),
-                '64'=parse(text = TeX(paste0('$\\lambda_{64}$'))),
-                '65'=parse(text = TeX(paste0('$\\lambda_{65}$'))))
-}
-
-if(J==3){
-  x.labels <- c('21'=parse(text = TeX(paste0('$\\lambda_{21}$'))),
-                '31'=parse(text = TeX(paste0('$\\lambda_{31}$'))),
-                '32'=parse(text = TeX(paste0('$\\lambda_{32}$'))))
-}
-
 if(estimand=="att"){
   xlabel <- TeX('$ATT_{j,j^*}$')
 }else if(estimand=="ate"){
@@ -198,9 +176,9 @@ rel.var.df <- data.frame(results.df) %>%
 sim.results.rel.var.avg <- ggplot(data=rel.var.df,
                                aes(x=Estimator, y=rel.var, fill=forcats::fct_rev(Estimator)))  + geom_col() +
   facet_grid(overlap.setting ~  gamma.setting, scales = "free", labeller=labeller3)   + ylab("Average precision relative to TMLE-multi. (GLM) over all pairwise comparisons") +  
-  scale_fill_discrete(name = "") +
+  scale_fill_manual(values= estimator.color) +
   scale_x_discrete(labels=NULL, limits = rev) +
-  theme(legend.position = "bottom",legend.margin=margin(1,5,5,5), legend.justification="center",
+  theme(legend.position = "none",legend.margin=margin(1,5,5,5), legend.justification="center",
         legend.box.margin=margin(0,0,0,0),legend.text=element_text(size=14), legend.key.width = unit(0.75, "cm"),legend.spacing.x = unit(0.75, 'cm'), legend.spacing.y = unit(0.75, 'cm')) +  
   theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
   theme(axis.title=element_text(family="serif", size=16)) +
@@ -255,6 +233,5 @@ z.rel.var.avg <- gtable_add_rows(z.rel.var.avg, unit(1/5, "line"), min(posT$t))
 # Draw it
 grid.newpage()
 grid.draw(z.rel.var.avg)
-
 
 ggsave(paste0("sim_results/static_simulation_rel_var_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_R_",results[[1]][[1]]$R,".png"),plot = z.rel.var.avg,scale=1.75)

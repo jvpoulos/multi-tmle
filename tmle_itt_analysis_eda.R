@@ -4,10 +4,9 @@
 
 print(paste0("Summarizing results from output directory: ", output_dir))
 
-n.estimators <- 5
-
 blind.drugs <- TRUE
 slides <- TRUE
+plot.legend <- FALSE
 
 print(paste0("Generating tables and plots for outcome:", outcome, "; Condition: ", condition))
 
@@ -32,7 +31,7 @@ if(use.SL){
 
 ## Summary statistics table
 
-if(condition=="none"){
+if(condition=="none" & outcome=="combined" & use.SL & weights.loc=='none'){
   print(tableNominal(data.frame(L.unscaled,A,Y.combined,Y.death, Y.diabetes)[c("California","Georgia","Iowa",                         
                                                                                "Mississippi","Oklahoma","West_Virginia","black","latino","white","mdd","schiz","year","female",
                                                                                "payer_index_mdcr","preperiod_ever_psych","preperiod_ever_metabolic","preperiod_ever_other","preperiod_ever_mt_gluc_or_lip",
@@ -72,7 +71,7 @@ if(blind.drugs){
   comparisons <- proper(colnames(g_preds))[2:6]
 }
 
-ates.dat <- data.frame(x =rep(comparisons,n.estimators),
+ates.dat <- data.frame(x =rep(comparisons, 2),
                        y = c(ATE_tmle,ATE_tmle_bin), 
                        y.lo = c(ATE_CI_tmle_lower,ATE_CI_tmle_bin_lower), 
                        y.hi = c(ATE_CI_tmle_upper,ATE_CI_tmle_bin_upper))
@@ -195,11 +194,44 @@ if(use.SL & condition!="none"){
     }
   }
   
-  # get legend plot
-  legend <- cowplot::get_legend(ate.plot)
+  if(plot.legend){
+    # get legend plot
+    legend <- cowplot::get_legend(ate.plot)
+    
+    png(paste0(output_dir,"tmle_", outcome, "_",condition, "_use_SL_",use.SL, "_legend.png"),width = 380, height = 380)
+    grid.newpage()
+    grid.draw(legend)
+    dev.off() # Close the file
+  }
+}
+
+# Love plot to report covariate balance
+if(use.SL & outcome=="combined" & condition=="none"){
   
-  png(paste0(output_dir,"tmle_", outcome, "_",condition, "_use_SL_",use.SL, "_legend.png"),width = 380, height = 380)
-  grid.newpage()
-  grid.draw(legend)
+  # using WeightIt to generate weights with multinomial
+  W.out <- weightit(A ~ L.unscaled,
+                       method = NULL,
+                       estimand = "ATE",
+                       ps = g_preds)
+  
+  W.out.bin <- weightit(A ~ L.unscaled,
+                    method = NULL,
+                    estimand = "ATE",
+                    ps = g_preds_bin)
+  
+  # asssessing balance numerically
+  bal.tab(weights=list("Multinomial"=W.out, "Binomial"=W.out.bin), un = TRUE, which.treat = .all)
+  
+  png(paste0(output_dir,"tmle_", outcome, "_",condition, "_use_SL_",use.SL, "_love_plot.png"))
+  #Summarizing balance in a Love plot
+  love.plot(weights=list("Multinomial (SL)"=W.out, "Binomial (SL)"=W.out.bin), 
+            thresholds = c(m = .2), 
+            var.order = "unadjusted",
+            binary = "std", # threshold of 0.2 (McCaffrey et al. 2013)
+            colors = c("darkgreen", "#F8766D", "#A3A500"), 
+            shapes = c("circle", "square", "triangle"),
+            line  = FALSE,
+            which.treat = .all, 
+            abs = FALSE)
   dev.off() # Close the file
 }

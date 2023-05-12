@@ -18,6 +18,8 @@ library(sl3)
 options(sl3.verbose = FALSE)
 library(car)
 library(latex2exp)
+library(WeightIt)
+library(cobalt)
 
 # Setup parallel processing
 library(parallel)
@@ -159,6 +161,12 @@ if(condition=="schizophrenia"){
   x <- ifelse(L[,'white']==1,1,0)
 }else if(condition=="other"){
   x <- ifelse(L[,'white']==0 & L[,'black']==0 & L[,'latino']==0,1,0)
+} else if(condition=="no_drug"){
+  x <- ifelse(L.unscaled[,'preperiod_drug_use_days']==0,1,0)
+}else if(condition=="young"){
+  x <- ifelse(L.unscaled[,"calculated_age"]<45,1,0)
+}else if(condition=="no_drug_young"){
+  x <- ifelse(L.unscaled[,"calculated_age"]<45 & L.unscaled[,'preperiod_drug_use_days']==0,1,0)
 }
 
 ## set parameters
@@ -223,8 +231,8 @@ if(use.SL){
                                          keep_extra=TRUE)
   if(weights.loc!='none'){
     initial_model_for_Y_sl_fit <-  readRDS(paste0(output_dir, 
-                                                  "tmle_", outcome,"_",outcome.type, "_", condition, "_", use.SL, "_", use.simulated,"_",
-                                                  "initial_model_for_Y_sl_fit.rds"))
+                                                  "tmle_", outcome,"_",outcome.type, "_", "none", "_", use.SL, "_", use.simulated,"_",
+                                                  "initial_model_for_Y_sl_fit.rds")) # same model used for all conditions
   }else{
     initial_model_for_Y_sl_fit <- initial_model_for_Y_sl$train(initial_model_for_Y_task)
     saveRDS(initial_model_for_Y_sl_fit,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", use.SL, "_", use.simulated,"_", "initial_model_for_Y_sl_fit.rds")) # save model
@@ -287,8 +295,8 @@ if(use.SL){
                                          keep_extra=TRUE)
   if(weights.loc!='none'){
     initial_model_for_A_sl_fit <-  readRDS(paste0(output_dir, # use combined outcome model
-                                                  "tmle_", "combined","_",outcome.type, "_", condition, "_", use.SL, "_", use.simulated,"_",
-                                                  "initial_model_for_A_sl_fit.rds"))
+                                                  "tmle_", "combined","_",outcome.type, "_", "none", "_", use.SL, "_", use.simulated,"_",
+                                                  "initial_model_for_A_sl_fit.rds")) # treatment model used in combined outcome analysis
   }else{
     initial_model_for_A_sl_fit <- initial_model_for_A_sl$train(initial_model_for_A_task)
     saveRDS(initial_model_for_A_sl_fit,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", use.SL, "_", use.simulated, "_", "initial_model_for_A_sl_fit.rds")) # save model
@@ -318,10 +326,10 @@ if(use.SL){
                                              metalearner = metalearner_A_bin,
                                              keep_extra=TRUE)
   
-  if(weights.loc!='none'){ # use combined outcome model
+  if(weights.loc!='none'){ 
     initial_model_for_A_sl_fit_bin <-  readRDS(paste0(output_dir, 
-                                                      "tmle_", "combined","_",outcome.type, "_", condition, "_", use.SL, "_", use.simulated,"_",
-                                                      "initial_model_for_A_sl_fit_bin.rds"))
+                                                      "tmle_", "combined","_",outcome.type, "_", "none", "_", use.SL, "_", use.simulated,"_",
+                                                      "initial_model_for_A_sl_fit_bin.rds")) # treatment model used in combined outcome analysis
   }else{
     initial_model_for_A_sl_fit_bin <- lapply(1:J, function(j) initial_model_for_A_sl_bin$train(initial_model_for_A_task_bin[[j]]))
     saveRDS(initial_model_for_A_sl_fit_bin,paste0(output_dir,"tmle_",outcome,"_",outcome.type, "_", condition, "_", use.SL, "_", use.simulated,"_","initial_model_for_A_sl_fit_bin.rds")) # save model

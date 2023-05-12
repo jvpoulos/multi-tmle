@@ -10,6 +10,8 @@ library(dplyr)
 library(grid)
 library(gtable)
 
+source("./src/misc_fns.R")
+
 results_dir <- './sim_results/'
 if(!dir.exists(results_dir)){
   print(paste0('create folder for results plot at: ', results_dir))
@@ -35,8 +37,10 @@ gamma.setting <- c("zero","low","yang")
 estimators <- c("tmle","tmle_bin", "tmle_glm","tmle_glm_bin", "gcomp", "gcomp_glm", "iptw", "iptw_bin",  "iptw_glm", "iptw_glm_bin","aiptw", "aiptw_bin","aiptw_glm", "aiptw_glm_bin")
 if(use.SL){
   estimators <- estimators[grep("glm", estimators, invert=TRUE)]
+  estimator.color <- c("#F8766D", "#A3A500", "#00BF7D", "#00B0F6", "#E76BF3")
 }else{
   estimators <- estimators[grep("glm", estimators)]
+  estimator.color <- c("#FF6C90", "#D89000", "#39B600", "#00BFC4", "#FF62BC")
 }
 
 n.estimators <- as.numeric(length(estimators))
@@ -113,7 +117,7 @@ results.df <- data.frame("abs.bias"=abs(unlist(bias)),
 if(use.SL){
   results.df$Estimator <- c(rep("TMLE-multi. (SL)",length.out=length(c(unlist(CP[[1]])))), 
                             rep("TMLE-bin. (SL)",length.out=length(c(unlist(CP[[2]])))),
-                            rep("G-Comp. (SL)",length.out=length(c(unlist(CP[[3]])))),
+                            rep("G-comp. (SL)",length.out=length(c(unlist(CP[[3]])))),
                             rep("IPTW-multi. (SL)",length.out=length(c(unlist(CP[[4]])))),
                             rep("IPTW-bin. (SL)",length.out=length(c(unlist(CP[[5]])))),
                             rep("AIPTW-multi. (SL)",length.out=length(c(unlist(CP[[6]])))),
@@ -121,7 +125,7 @@ if(use.SL){
 }else{
   results.df$Estimator <- c(rep("TMLE-multi. (GLM)",length.out=length(c(unlist(CP[[1]])))), 
                             rep("TMLE-bin. (GLM)",length.out=length(c(unlist(CP[[2]])))),
-                            rep("G-Comp. (GLM)",length.out=length(c(unlist(CP[[3]])))),
+                            rep("G-comp. (GLM)",length.out=length(c(unlist(CP[[3]])))),
                             rep("IPTW-multi. (GLM)",length.out=length(c(unlist(CP[[4]])))),
                             rep("IPTW-bin. (GLM)",length.out=length(c(unlist(CP[[5]])))),
                             rep("AIPTW-multi. (GLM)",length.out=length(c(unlist(CP[[6]])))),
@@ -174,14 +178,14 @@ if(use.SL){
   results.df <- results.df %>%
     filter(Estimator %in% c("TMLE-multi. (SL)",
                               "TMLE-bin. (SL)",
-                              "G-Comp. (SL)",
+                              "G-comp. (SL)",
                               "IPTW-multi. (SL)",
                               "IPTW-bin. (SL)"))
 }else{
   results.df <- results.df %>%
     filter(Estimator %in% c("TMLE-multi. (GLM)",
                             "TMLE-bin. (GLM)",
-                            "G-Comp. (GLM)",
+                            "G-comp. (GLM)",
                             "IPTW-multi. (GLM)",
                             "IPTW-bin. (GLM)"))
 }
@@ -237,10 +241,11 @@ if(estimand=="att"){
 sim.results.bias <- ggplot(data=results_long[results_long$variable=="abs.bias",],
                            aes(x=comparison, y=value, fill=forcats::fct_rev(Estimator)))  + geom_boxplot(outlier.alpha = 0.3,outlier.size = 1, outlier.stroke = 0.1, lwd=0.25) +
   facet_grid(overlap.setting ~  gamma.setting, scales = "free", labeller=labeller3)  +  xlab(xlabel) + ylab("Absolute bias") +  #gtitle(paste0("Absolute bias (J=",J,", n=", n,")")) +
-  scale_fill_discrete(name = "") +
+  scale_fill_manual(values= estimator.color) +
+  #scale_fill_discrete(name = "") +
   scale_x_discrete(labels=x.labels,
                    limits = rev) +
-  theme(legend.position = "bottom",legend.margin=margin(1,5,5,5), legend.justification="center",
+  theme(legend.position = "none",legend.margin=margin(1,5,5,5), legend.justification="center",
         legend.box.margin=margin(0,0,0,0),legend.text=element_text(size=14), legend.key.width = unit(0.75, "cm"), legend.spacing.x = unit(0.75, 'cm'), legend.spacing.y = unit(0.75, 'cm')) +
   theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
   theme(axis.title=element_text(family="serif", size=16)) +
@@ -300,11 +305,12 @@ ggsave(paste0("sim_results/static_simulation_bias_estimand_",estimand,"_J_",J,"_
 sim.results.coverage <- ggplot(data=results_long[results_long$variable=="CP",],
                                aes(x=comparison, y=value, colour=forcats::fct_rev(Estimator), group=forcats::fct_rev(Estimator)))  +   geom_line()  +
   facet_grid(overlap.setting ~  gamma.setting, scales = "fixed", labeller=labeller3)  +  xlab(xlabel) + ylab("Coverage probability (%)") + #ggtitle(paste0("Coverage probability (J=",J,", n=", n,")")) + 
-  scale_colour_discrete(name = "Estimator:") +
+  #scale_colour_discrete(name = "Estimator:") +
+  scale_fill_manual(values= estimator.color) +
   scale_x_discrete(labels=x.labels,
                    limits = rev) +
   geom_hline(yintercept = 0.95, linetype="dotted")+
-  theme(legend.position = "bottom",legend.margin=margin(1,5,5,5), legend.justification="center",
+  theme(legend.position = "none",legend.margin=margin(1,5,5,5), legend.justification="center",
         legend.box.margin=margin(0,0,0,0),legend.text=element_text(size=14), legend.key.width = unit(0.75, "cm"),legend.spacing.x = unit(0.75, 'cm'), legend.spacing.y = unit(0.75, 'cm')) +   
   theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
   theme(axis.title=element_text(family="serif", size=16)) +
@@ -351,10 +357,11 @@ ggsave(paste0("sim_results/static_simulation_coverage_estimand_",estimand,"_J_",
 sim.results.CI.width <- ggplot(data=results_long[results_long$variable=="CIW",],
                                aes(x=comparison, y=value, fill=forcats::fct_rev(Estimator)))  + geom_boxplot(outlier.alpha = 0.3,outlier.size = 1, outlier.stroke = 0.1, lwd=0.25) +
   facet_grid(overlap.setting ~  gamma.setting, scales = "free", labeller=labeller3)  +  xlab(xlabel) + ylab("Confidence interval width") + 
-  scale_fill_discrete(name = "") +
+  #scale_fill_discrete(name = "") +
+  scale_fill_manual(values= estimator.color) +
   scale_x_discrete(labels=x.labels,
                    limits = rev) +
-  theme(legend.position = "bottom",legend.margin=margin(1,5,5,5), legend.justification="center",
+  theme(legend.position = "none",legend.margin=margin(1,5,5,5), legend.justification="center",
         legend.box.margin=margin(0,0,0,0),legend.text=element_text(size=14), legend.key.width = unit(0.75, "cm"),legend.spacing.x = unit(0.75, 'cm'), legend.spacing.y = unit(0.75, 'cm')) +  
   theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
   theme(axis.title=element_text(family="serif", size=16)) +
@@ -409,10 +416,11 @@ coverage.df <- data.frame(results.df) %>%
 sim.results.cp.avg <- ggplot(data=coverage.df,
                              aes(x=Estimator, y=CP, fill=forcats::fct_rev(Estimator)))  + geom_col() +
   facet_grid(overlap.setting ~  gamma.setting, scales = "fixed", labeller=labeller3)   + ylab("Average coverage probability over all pairwise comparisons") + 
-  scale_fill_discrete(name = "") +
+  #scale_fill_discrete(name = "") +
+  scale_fill_manual(values= estimator.color) +
   scale_x_discrete(labels=NULL, limits = rev) +
   geom_hline(yintercept = 0.95, linetype="dotted")+
-  theme(legend.position = "bottom",legend.margin=margin(1,5,5,5), legend.justification="center",
+  theme(legend.position = "none",legend.margin=margin(1,5,5,5), legend.justification="center",
         legend.box.margin=margin(0,0,0,0),legend.text=element_text(size=14), legend.key.width = unit(0.75, "cm"),legend.spacing.x = unit(0.75, 'cm'), legend.spacing.y = unit(0.75, 'cm')) +  
   theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
   theme(axis.title=element_text(family="serif", size=16)) +
@@ -473,9 +481,10 @@ bias.df <- data.frame(results.df) %>%
 sim.results.bias.avg <- ggplot(data=bias.df,
                                aes(x=Estimator, y=bias, fill=forcats::fct_rev(Estimator)))  + geom_col() +
   facet_grid(overlap.setting ~  gamma.setting, scales = "free", labeller=labeller3)   + ylab("Average bias over all pairwise comparisons") +  
-  scale_fill_discrete(name = "") +
+  #scale_fill_discrete(name = "") +
+  scale_fill_manual(values= estimator.color) +
   scale_x_discrete(labels=NULL, limits = rev) +
-  theme(legend.position = "bottom",legend.margin=margin(1,5,5,5), legend.justification="center",
+  theme(legend.position = "none",legend.margin=margin(1,5,5,5), legend.justification="center",
         legend.box.margin=margin(0,0,0,0),legend.text=element_text(size=14), legend.key.width = unit(0.75, "cm"),legend.spacing.x = unit(0.75, 'cm'), legend.spacing.y = unit(0.75, 'cm')) +  
   theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
   theme(axis.title=element_text(family="serif", size=16)) +
@@ -536,9 +545,10 @@ CIW.df <- data.frame(results.df) %>%
 sim.results.CIW.avg <- ggplot(data=CIW.df,
                               aes(x=Estimator, y=CIW, fill=forcats::fct_rev(Estimator)))  + geom_col() +
   facet_grid(overlap.setting ~  gamma.setting, scales = "free", labeller=labeller3)   + ylab("Average confidence interval width over all pairwise comparisons") +  
-  scale_fill_discrete(name = "") +
+  #scale_fill_discrete(name = "") +
+  scale_fill_manual(values= estimator.color) +
   scale_x_discrete(labels=NULL, limits = rev) +
-  theme(legend.position = "bottom",legend.margin=margin(1,5,5,5), legend.justification="center",
+  theme(legend.position = "none",legend.margin=margin(1,5,5,5), legend.justification="center",
         legend.box.margin=margin(0,0,0,0),legend.text=element_text(size=14), legend.key.width = unit(0.75, "cm"),legend.spacing.x = unit(0.75, 'cm'), legend.spacing.y = unit(0.75, 'cm')) +  
   theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
   theme(axis.title=element_text(family="serif", size=16)) +
@@ -852,10 +862,11 @@ if(use.SL){
   sim.results.A.mean <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="A.mean",],  
                                aes(x=factor(Treatment), y=value,fill=forcats::fct_rev(Estimator)))  + geom_boxplot(outlier.alpha = 0.3,outlier.size = 1, outlier.stroke = 0.1, lwd=0.25) +
     facet_grid(overlap.setting ~ gamma.setting, scales = "fixed", labeller=labeller3)  +  xlab("Treatment level (j)") + ylab("Estimated treatment probability") + #ggtitle(paste0("Estimated treatment probabilities (J=",J,", n=", n,")")) +
-    scale_fill_discrete(name = "Treatment model: ") +
+    #scale_fill_discrete(name = "Treatment model: ") +
+    scale_fill_manual(values= c("#F8766D", "#FF6C90", "#A3A500", "#D89000")) +
     scale_x_discrete(labels=x.labels.AY,
                      limits = rev) +
-    theme(legend.position = "bottom",legend.margin=margin(1,5,5,5), legend.justification="center",
+    theme(legend.position = "none",legend.margin=margin(1,5,5,5), legend.justification="center",
           legend.box.margin=margin(0,0,0,0),legend.text=element_text(size=14), legend.key.width = unit(0.75, "cm"), legend.spacing.x = unit(1, 'cm'), legend.spacing.y = unit(1, 'cm')) +  
     theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
     theme(axis.title=element_text(family="serif", size=16)) +
@@ -897,11 +908,12 @@ if(use.SL){
   sim.results.A.mean.diff <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="A.mean.diff",],  
                                     aes(x=factor(Treatment), y=value,fill=forcats::fct_rev(Estimator)))  + geom_boxplot(outlier.alpha = 0.3,outlier.size = 1, outlier.stroke = 0.1, lwd=0.25) +
     facet_grid(overlap.setting ~ gamma.setting, scales = "free", labeller=labeller3)  +  xlab("Treatment level (j)") + ylab("Absolute difference between estimated and observed treatment probabilities") + #ggtitle(paste0("Accuracy of treatment estimation (J=",J,", n=", n,")")) +
-    scale_fill_discrete(name = "Treatment model: ") +
+    #scale_fill_discrete(name = "Treatment model: ") +
+    scale_fill_manual(values= c("#F8766D", "#FF6C90", "#A3A500", "#D89000")) +
     scale_x_discrete(labels=x.labels.AY,
                      limits = rev) +
     #coord_cartesian(ylim=c(0,0.15)) +
-    theme(legend.position = "bottom",legend.margin=margin(1,5,5,5), legend.justification="center",
+    theme(legend.position = "none",legend.margin=margin(1,5,5,5), legend.justification="center",
           legend.box.margin=margin(0,0,0,0),legend.text=element_text(size=14), legend.key.width = unit(0.75, "cm"), legend.spacing.x = unit(1, 'cm'), legend.spacing.y = unit(1, 'cm')) +    theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
     theme(axis.title=element_text(family="serif", size=16)) +
     theme(axis.text.y=element_text(family="serif", size=16)) +
@@ -942,10 +954,11 @@ if(use.SL){
   sim.results.Y.initial <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="Y.initial",], 
                                   aes(x=factor(Treatment), y=value,fill=forcats::fct_rev(Estimator)))  + geom_boxplot(outlier.alpha = 0.3,outlier.size = 1, outlier.stroke = 0.1, lwd=0.25) +
     facet_grid(overlap.setting ~ gamma.setting, scales = "fixed", labeller=labeller3)  +  xlab("Treatment level (j)") + ylab("Initial outcome estimate") + #ggtitle(paste0("Initial outcome estimate (J=",J,", n=", n,")")) +
-    scale_fill_discrete(name = "Outcome model: ") +
+    #scale_fill_discrete(name = "Outcome model: ") +
+    scale_fill_manual(values= c("#F8766D", "#FF6C90", "#A3A500", "#D89000")) +
     scale_x_discrete(labels=x.labels.AY,
                      limits = rev) +
-    theme(legend.position = "bottom",legend.margin=margin(1,5,5,5), legend.justification="center",
+    theme(legend.position = "none",legend.margin=margin(1,5,5,5), legend.justification="center",
           legend.box.margin=margin(0,0,0,0),legend.text=element_text(size=14), legend.key.width = unit(0.75, "cm"), legend.spacing.x = unit(1, 'cm'), legend.spacing.y = unit(1, 'cm')) +    theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
     theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
     theme(axis.title=element_text(family="serif", size=16)) +
@@ -987,10 +1000,11 @@ if(use.SL){
   sim.results.Y.initial.diff <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="Y.initial.diff",], 
                                        aes(x=factor(Treatment), y=value,fill=forcats::fct_rev(Estimator)))  + geom_boxplot(outlier.alpha = 0.3,outlier.size = 1, outlier.stroke = 0.1, lwd=0.25) +
     facet_grid(overlap.setting ~ gamma.setting, scales = "free", labeller=labeller3)  +  xlab("Treatment level (j)") + ylab("Absolute difference between initial outcome estimate and observed outcome") + #ggtitle(paste0("Accuracy of outcome estimation (J=",J,", n=", n,")")) +
-    scale_fill_discrete(name = "Outcome model: ") +
+    #scale_fill_discrete(name = "Outcome model: ") +
+    scale_fill_manual(values= c("#F8766D", "#FF6C90", "#A3A500", "#D89000")) +
     scale_x_discrete(labels=x.labels.AY,
                      limits = rev) +
-    theme(legend.position = "bottom",legend.margin=margin(1,5,5,5), legend.justification="center",
+    theme(legend.position = "none",legend.margin=margin(1,5,5,5), legend.justification="center",
           legend.box.margin=margin(0,0,0,0),legend.text=element_text(size=14), legend.key.width = unit(0.75, "cm"), legend.spacing.x = unit(1, 'cm'), legend.spacing.y = unit(1, 'cm')) +    theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
     theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
     theme(axis.title=element_text(family="serif", size=16)) +
@@ -1032,10 +1046,11 @@ if(use.SL){
   sim.results.ESS <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="ESS",],
                             aes(x=factor(Treatment), y=value,fill=forcats::fct_rev(Estimator)))  + geom_boxplot(outlier.alpha = 0.3,outlier.size = 1, outlier.stroke = 0.1, lwd=0.25) +
     facet_grid(overlap.setting ~ gamma.setting, scales = "fixed", labeller=labeller3)  +  xlab("Treatment level (j)") + ylab("Estimated effective sample size (ESS)") + #ggtitle(paste0("Effective sample size (J=",J,", n=", n,")")) +
-    scale_fill_discrete(name = "Treatment model: ") +
+    #scale_fill_discrete(name = "Treatment model: ") +
+    scale_fill_manual(values= c("#F8766D", "#FF6C90", "#A3A500", "#D89000")) +
     scale_x_discrete(labels=x.labels.AY,
                      limits = rev) +
-    theme(legend.position = "bottom",legend.margin=margin(1,5,5,5), legend.justification="center",
+    theme(legend.position = "none",legend.margin=margin(1,5,5,5), legend.justification="center",
           legend.box.margin=margin(0,0,0,0),legend.text=element_text(size=14), legend.key.width = unit(0.75, "cm"), legend.spacing.x = unit(1, 'cm'), legend.spacing.y = unit(1, 'cm')) +    theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
     theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
     theme(axis.title=element_text(family="serif", size=16)) +
@@ -1077,11 +1092,12 @@ if(use.SL){
   sim.results.ESS_ratio <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="ESS_ratio",],
                                   aes(x=factor(Treatment), y=value,fill=forcats::fct_rev(Estimator)))  + geom_boxplot(outlier.alpha = 0.3,outlier.size = 1, outlier.stroke = 0.1, lwd=0.25) +
     facet_grid(overlap.setting ~ gamma.setting, scales = "fixed", labeller=labeller3)  +  xlab("Treatment level (j)") + ylab(TeX(paste0('Estimated effective sample size (ESS) ratio, $ESS_j/n_j$'))) + #ggtitle(paste0("Effective sample size ratio (J=",J,", n=", n,")")) +
-    scale_fill_discrete(name = "Treatment model: ") +
+    #scale_fill_discrete(name = "Treatment model: ") +
+    scale_fill_manual(values= c("#F8766D", "#FF6C90", "#A3A500", "#D89000")) +
     scale_x_discrete(labels=x.labels.AY,
                      limits = rev) +
     coord_cartesian(ylim=c(0,1)) +
-    theme(legend.position = "bottom",legend.margin=margin(1,5,5,5), legend.justification="center",
+    theme(legend.position = "none",legend.margin=margin(1,5,5,5), legend.justification="center",
           legend.box.margin=margin(0,0,0,0),legend.text=element_text(size=14), legend.key.width = unit(0.75, "cm"), legend.spacing.x = unit(1, 'cm'), legend.spacing.y = unit(1, 'cm')) +    theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
     theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
     theme(axis.title=element_text(family="serif", size=16)) +
