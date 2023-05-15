@@ -146,12 +146,12 @@ if(use.SL & condition!="none"){
   
   ate.plot <- ForestPlot(ates.dat,
                          xlab=estimand,ylab="Treatment") +
-  #  scale_colour_manual(values= c(gg_color_hue(3)[1],gg_color_hue(3)[3])) +
+    #  scale_colour_manual(values= c(gg_color_hue(3)[1],gg_color_hue(3)[3])) +
     labs(color="Estimator: ") +
     scale_x_discrete(limits = rev) +
     # theme(legend.position = "bottom",legend.margin=margin(1,5,5,5), legend.justification="center",
     #       legend.box.margin=margin(0,0,0,0),legend.text=element_text(size=14), legend.key.width = unit(0.75, "cm"), legend.spacing.x = unit(0.75, 'cm'), legend.spacing.y = unit(0.75, 'cm')) +
-     theme(plot.title = element_text(hjust = 0.5, family="serif", size=16), plot.subtitle = element_text(hjust = 0.5, family="serif", size=14)) +
+    theme(plot.title = element_text(hjust = 0.5, family="serif", size=16), plot.subtitle = element_text(hjust = 0.5, family="serif", size=14)) +
     theme(axis.title=element_text(family="serif", size=16)) +
     theme(axis.text.y=element_text(family="serif", size=16)) +
     theme(axis.text.x=element_text(family="serif", size=14, angle = 0, vjust = 0.5, hjust=0.25)) +#angle = 45, , hjust=1
@@ -210,28 +210,55 @@ if(use.SL & outcome=="combined" & condition=="none"){
   
   # using WeightIt to generate weights with multinomial
   W.out <- weightit(A ~ L.unscaled,
-                       method = NULL,
-                       estimand = "ATE",
-                       ps = g_preds)
-  
-  W.out.bin <- weightit(A ~ L.unscaled,
                     method = NULL,
                     estimand = "ATE",
-                    ps = g_preds_bin)
+                    ps = as.vector(rowSums(obs.treatment*g_preds))) #  value corresponds to the probability of being in the treatment actually received
+  
+  W.out.bin <- weightit(A ~ L.unscaled,
+                        method = NULL,
+                        estimand = "ATE",
+                        ps = as.vector(rowSums(obs.treatment*g_preds_bin)))
   
   # asssessing balance numerically
-  bal.tab(weights=list("Multinomial"=W.out, "Binomial"=W.out.bin), un = TRUE, which.treat = .all)
+  print(bal.tab(x= W.out, weights = list("Binomial (SL)"= W.out.bin), s.d.denom = "pooled", un = TRUE))
+  
+  cov.names <- c("California","Georgia","Iowa","Mississippi","Oklahoma","West Virginia","Black","Latino","White","MDD","Schiz.","Medicare","Year",
+                 "Female","Psychiatric comorbidity","Metabolic risk","Other chronic conditions","Antipsychotic drug use (days)","Lipid or glucose lab tests",
+                 "Antidiabetic","Cardiometabolic disorders","Cardiometabolic effects","Age","Psychiatric ER visits","Non-psychiatric ER visits", 
+                 "Injury-related ER visits","Psychiatric outpatient visits","Non-psychiatric outpatient visits","Injury-related outpatient visits","Psychiatric inpatient days","Non-psychiatric inpatient (days)","Injury-related inpatient (days)")
+  
+  names(cov.names) <- c("California","Georgia","Iowa","Mississippi","Oklahoma","West_Virginia","black","latino","white","mdd","schiz","payer_index_mdcr","year",
+                        "female","preperiod_ever_psych","preperiod_ever_metabolic","preperiod_ever_other","preperiod_drug_use_days","preperiod_ever_mt_gluc_or_lip",
+                        "preperiod_ever_rx_antidiab","preperiod_ever_rx_cm_nondiab","preperiod_ever_rx_other","calculated_age","preperiod_er_mhsa","preperiod_er_nonmhsa", 
+                        "preperiod_er_injury","preperiod_cond_mhsa","preperiod_cond_nonmhsa","preperiod_cond_injury","preperiod_los_mhsa","preperiod_los_nonmhsa","preperiod_los_injury")
   
   png(paste0(output_dir,"tmle_", outcome, "_",condition, "_use_SL_",use.SL, "_love_plot.png"))
   #Summarizing balance in a Love plot
-  love.plot(weights=list("Multinomial (SL)"=W.out, "Binomial (SL)"=W.out.bin), 
-            thresholds = c(m = .2), 
-            var.order = "unadjusted",
-            binary = "std", # threshold of 0.2 (McCaffrey et al. 2013)
-            colors = c("darkgreen", "#F8766D", "#A3A500"), 
+  love.plot(A ~ L.unscaled, 
+            weights=list("Multinomial (SL)"=W.out, "Binomial (SL)"=W.out.bin), 
+            thresholds = c(m = .2), # threshold of 0.2 (McCaffrey et al. 2013)
+            var.order = "alphabetical",
+            s.d.denom = "pooled",
+            binary = "std", 
+            continuous = "std",
+            colors = c("black", "#F8766D", "#A3A500"), 
             shapes = c("circle", "square", "triangle"),
             line  = FALSE,
-            which.treat = .all, 
-            abs = FALSE)
+          #  abs = TRUE,
+          #  limits = c(0.01,1),
+            alpha = 0.7,
+            size = 3,
+            wrap = 30,
+            var.names = cov.names,
+            title = "", # covariate balance: max. across treatment pairs
+            sample.names=c("Raw", "Multinomial (SL)","Binomial (SL)"),
+            labels = FALSE,
+            position = "none",
+            themes =list(theme(axis.title=element_text(family="serif", size=14)),
+                         theme(axis.text.x=element_text(family="serif", size=14)),
+                         theme(axis.text.y=element_text(family="serif", size=14)),
+                         theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l =0))),
+                         theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l =0))),
+                         theme(panel.spacing = unit(1, "lines"))))
   dev.off() # Close the file
 }
