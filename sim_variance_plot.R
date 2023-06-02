@@ -31,9 +31,9 @@ outcome.type <- 'binomial'
 overlap.setting <- c("adequate","inadequate","rct")
 gamma.setting <- c("zero","low","yang")
 
-estimators <- c("tmle","tmle_bin", "tmle_glm", "gcomp", "iptw", "iptw_bin", "aiptw", "aiptw_bin")
+estimators <- c("tmle","tmle_glm", "tmle_bin", "gcomp", "iptw", "iptw_bin", "aiptw", "aiptw_bin")
 
-estimator.color <- c("#F8766D","#A3A500","#FF6C90","#00BF7D","#00B0F6","#E76BF3")
+estimator.color <- c("#F8766D","#FF6C90","#A3A500","#00BF7D","#00B0F6","#E76BF3")
 
 n.estimators <- as.numeric(length(estimators))
 
@@ -81,8 +81,8 @@ results.df <- data.frame("var"=unlist(var),
 
 
 results.df$Estimator <- c(rep("TMLE-multi. (SL)",length.out=length(c(unlist(var[[1]])))), 
-                          rep("TMLE-bin. (SL)",length.out=length(c(unlist(var[[2]])))),
-                          rep("TMLE-multi. (GLM)",length.out=length(c(unlist(var[[3]])))), 
+                          rep("TMLE-multi. (GLM)",length.out=length(c(unlist(var[[2]])))), 
+                          rep("TMLE-bin. (SL)",length.out=length(c(unlist(var[[3]])))),
                           rep("G-Comp. (SL)",length.out=length(c(unlist(var[[4]])))),
                           rep("IPTW-multi. (SL)",length.out=length(c(unlist(var[[5]])))),
                           rep("IPTW-bin. (SL)",length.out=length(c(unlist(var[[6]])))),
@@ -134,8 +134,8 @@ results.df <- results.df %>%
 
 results.df <- results.df %>%
   filter(Estimator %in% c("TMLE-multi. (SL)",
-                          "TMLE-bin. (SL)",
                           "TMLE-multi. (GLM)",
+                          "TMLE-bin. (SL)",
                           "G-Comp. (SL)",
                           "IPTW-multi. (SL)",
                           "IPTW-bin. (SL)"))

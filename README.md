@@ -66,9 +66,7 @@ Contents
 
 	+ *n.folds*: number of cross-validation folds for Super Learner. Defaults to 2 and is ignored if *use.SL* is FALSE. 
 
-* ***combine_sim_plots.R*** combine output from ***tmle_MultinomialTrts.R*** and plot. The following parameter must be changed to correpond with the simulation results:
-
-	+ *J*: number of treatments, J={3,6}, corresponding to results. 
+* ***combine_sim_plots.R*** and ***sim_variance_plot.R*** combine output from ***tmle_MultinomialTrts.R*** and plot. 
 
 	+ *outcome.type*: Adjusts the form of the simulation outcome model and outcome model estimation. Defaults at 'binomial'.
 
@@ -87,7 +85,7 @@ Instructions
 
 	`Rscript tmle_MultinomialTrts.R 1 'binomial' 'TRUE' 'TRUE'`
 
-3. To plot simulation results, run: `Rscript combine_sim_plots.R [arg1]`; where `[arg1]` specifies the output path of the simulation results; `[arg2]` specifies the number of treatments [3,6]; `[arg3]` specifies is a logical flag if super learner estimates are to be used (if 'FALSE', GLM estimates are used). E.g., 
+3. To plot simulation results, run: `Rscript combine_sim_plots.R [arg1] [arg2] [arg3]`; where `[arg1]` specifies the output path of the simulation results; `[arg2]` specifies the number of treatments [3,6]; `[arg3]` specifies is a logical flag if super learner estimates are to be used (if 'FALSE', GLM estimates are used). E.g., 
 	
 	`Rscript combine_sim_plots.R 'outputs/20230427' 6 'TRUE'`
 
