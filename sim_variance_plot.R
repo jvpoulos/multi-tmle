@@ -19,7 +19,7 @@ if(!dir.exists(results_dir)){
 # Define parameters
 
 options(echo=TRUE)
-args <- commandArgs(trailingOnly = TRUE) # c("outputs/20230427", 6)
+args <- commandArgs(trailingOnly = TRUE) # args <- c("outputs/20230427", 6)
 output.path <- as.character(args[1])
 J <- as.numeric(args[2])
 
@@ -130,7 +130,7 @@ results.df <- results.df %>%
   group_by(comparison,overlap.setting,gamma.setting,J) %>% 
   mutate(oracle.var= mean(var[Estimator=="TMLE-multi. (GLM)"])) %>% 
   group_by(Estimator,comparison,overlap.setting,gamma.setting,J) %>% 
-  mutate(rel.var = mean(var/oracle.var))
+  mutate(rel.var = mean(oracle.var/var))
 
 results.df <- results.df %>%
   filter(Estimator %in% c("TMLE-multi. (SL)",

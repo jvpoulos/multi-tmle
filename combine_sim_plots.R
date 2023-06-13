@@ -861,7 +861,7 @@ if(use.SL){
   # treatment estimates
   sim.results.A.mean <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="A.mean",],  
                                aes(x=factor(Treatment), y=value,fill=forcats::fct_rev(Estimator)))  + geom_boxplot(outlier.alpha = 0.3,outlier.size = 1, outlier.stroke = 0.1, lwd=0.25) +
-    facet_grid(overlap.setting ~ gamma.setting, scales = "fixed", labeller=labeller3)  +  xlab("Treatment level (j)") + ylab("Estimated treatment probability") + #ggtitle(paste0("Estimated treatment probabilities (J=",J,", n=", n,")")) +
+    facet_grid(overlap.setting ~ ., scales = "fixed", labeller=labeller3)  +  xlab("Treatment level (j)") + ylab("Estimated treatment probability") + #ggtitle(paste0("Estimated treatment probabilities (J=",J,", n=", n,")")) +
     #scale_fill_discrete(name = "Treatment model: ") +
     scale_fill_manual(values= c("#F8766D", "#FF6C90", "#A3A500", "#D89000")) +
     scale_x_discrete(labels=x.labels.AY,
@@ -907,12 +907,12 @@ if(use.SL){
   # treatment estimates -diff
   sim.results.A.mean.diff <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="A.mean.diff",],  
                                     aes(x=factor(Treatment), y=value,fill=forcats::fct_rev(Estimator)))  + geom_boxplot(outlier.alpha = 0.3,outlier.size = 1, outlier.stroke = 0.1, lwd=0.25) +
-    facet_grid(overlap.setting ~ gamma.setting, scales = "free", labeller=labeller3)  +  xlab("Treatment level (j)") + ylab("Absolute difference between estimated and observed treatment probabilities") + #ggtitle(paste0("Accuracy of treatment estimation (J=",J,", n=", n,")")) +
+    facet_grid(overlap.setting ~ ., scales = "free", labeller=labeller3)  +  xlab("Treatment level (j)") + ylab("Absolute difference between estimated and observed treatment probabilities") + #ggtitle(paste0("Accuracy of treatment estimation (J=",J,", n=", n,")")) +
     #scale_fill_discrete(name = "Treatment model: ") +
     scale_fill_manual(values= c("#F8766D", "#FF6C90", "#A3A500", "#D89000")) +
     scale_x_discrete(labels=x.labels.AY,
                      limits = rev) +
-    #coord_cartesian(ylim=c(0,0.15)) +
+    #coord_cartesian(ylim=c(0,0.0075)) +
     theme(legend.position = "none",legend.margin=margin(1,5,5,5), legend.justification="center",
           legend.box.margin=margin(0,0,0,0),legend.text=element_text(size=14), legend.key.width = unit(0.75, "cm"), legend.spacing.x = unit(1, 'cm'), legend.spacing.y = unit(1, 'cm')) +    theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
     theme(axis.title=element_text(family="serif", size=16)) +
@@ -1045,7 +1045,7 @@ if(use.SL){
   # ESS
   sim.results.ESS <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="ESS",],
                             aes(x=factor(Treatment), y=value,fill=forcats::fct_rev(Estimator)))  + geom_boxplot(outlier.alpha = 0.3,outlier.size = 1, outlier.stroke = 0.1, lwd=0.25) +
-    facet_grid(overlap.setting ~ gamma.setting, scales = "fixed", labeller=labeller3)  +  xlab("Treatment level (j)") + ylab("Estimated effective sample size (ESS)") + #ggtitle(paste0("Effective sample size (J=",J,", n=", n,")")) +
+    facet_grid(overlap.setting ~ ., scales = "fixed", labeller=labeller3)  +  xlab("Treatment level (j)") + ylab("Estimated effective sample size (ESS)") + #ggtitle(paste0("Effective sample size (J=",J,", n=", n,")")) +
     #scale_fill_discrete(name = "Treatment model: ") +
     scale_fill_manual(values= c("#F8766D", "#FF6C90", "#A3A500", "#D89000")) +
     scale_x_discrete(labels=x.labels.AY,
@@ -1091,7 +1091,7 @@ if(use.SL){
   # ESS_ratio
   sim.results.ESS_ratio <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="ESS_ratio",],
                                   aes(x=factor(Treatment), y=value,fill=forcats::fct_rev(Estimator)))  + geom_boxplot(outlier.alpha = 0.3,outlier.size = 1, outlier.stroke = 0.1, lwd=0.25) +
-    facet_grid(overlap.setting ~ gamma.setting, scales = "fixed", labeller=labeller3)  +  xlab("Treatment level (j)") + ylab(TeX(paste0('Estimated effective sample size (ESS) ratio, $ESS_j/n_j$'))) + #ggtitle(paste0("Effective sample size ratio (J=",J,", n=", n,")")) +
+    facet_grid(overlap.setting ~ ., scales = "fixed", labeller=labeller3)  +  xlab("Treatment level (j)") + ylab(TeX(paste0('Estimated effective sample size (ESS) ratio, $ESS_j/n_j$'))) + #ggtitle(paste0("Effective sample size ratio (J=",J,", n=", n,")")) +
     #scale_fill_discrete(name = "Treatment model: ") +
     scale_fill_manual(values= c("#F8766D", "#FF6C90", "#A3A500", "#D89000")) +
     scale_x_discrete(labels=x.labels.AY,
