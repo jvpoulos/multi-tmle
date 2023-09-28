@@ -1,4 +1,4 @@
-packages <- c("devtools","ggplot2","nnet","tmle","MASS","purrr","tidyverse","data.table","SuperLearner","Rsolnp","reshape2","origami","tictoc","weights","grid","car","latex2exp","cobalt", "WeightIt")
+packages <- c("devtools","ggplot2","nnet","tmle","MASS","purrr","tidyverse","data.table","SuperLearner","Rsolnp","reshape2","origami","tictoc","weights","grid","car","latex2exp","cobalt", "WeightIt","VGAM","extraDistr","MCMCpack")
 
 super.learner <- TRUE
 dependencies <- FALSE # data.table, stringi, HMisc dependencies might be needed for SuperLearner libraries
@@ -23,6 +23,5 @@ remotes::install_github("tlverse/tmle3")
 # doMPI
 doMPI <- FALSE
 if(doMPI){
-  install.packages("Rmpi")
   install.packages("doMPI", dependencies=TRUE, repos = "http://cran.us.r-project.org")
 }

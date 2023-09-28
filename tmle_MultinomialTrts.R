@@ -12,7 +12,7 @@ source('./src/misc_fns.R')
 # Simulation function #
 ######################
 
-staticSim <- function(r, J, n, gbound, ybound, n.folds, overlap.setting, gamma.setting, outcome.type, target.gwt, use.SL, scale.continuous){
+staticSim <- function(r, J, n, gbound, ybound, n.folds, overlap.setting, gamma.setting, outcome.type, target.gwt, use.SL, scale.continuous, covars40, covars100){
   
   library(purrr)
   library(origami)
@@ -22,6 +22,9 @@ staticSim <- function(r, J, n, gbound, ybound, n.folds, overlap.setting, gamma.s
   library(xgboost)
   library(glmnet)
   library(MASS)
+  library(VGAM)
+  library(extraDistr)
+  library(MCMCpack)
   
   print(paste("This is simulation run number",r, "\n"))
   
@@ -29,8 +32,12 @@ staticSim <- function(r, J, n, gbound, ybound, n.folds, overlap.setting, gamma.s
     stop("J must be 3 or 6")
   }
   
+  if(J==3 & (covars40 | covars100)){
+    stop("J must be 6 if covars40 or covars100 is TRUE")
+  }
+  
   ## Generate data
-  generated.data <- generateData(r, J, n, overlap.setting, gamma.setting, outcome.type, scale.continuous)
+  generated.data <- generateData(r, J, n, overlap.setting, gamma.setting, outcome.type, scale.continuous, covars40, covars100)
   true.ates <- generated.data$trueATE
   obs.treatment <- generated.data$observed.treatment
   
@@ -258,11 +265,13 @@ settings <- expand.grid("J"=c(3,6),
 settings$n <- ifelse(settings$J==6, 10000, 5000)
 
 options(echo=TRUE)
-args <- commandArgs(trailingOnly = TRUE) # command line arguments
+args <- commandArgs(trailingOnly = TRUE) # command line arguments # args <- c("2",'binomial', 'TRUE', 'TRUE', 'TRUE', 'FALSE')
 thisrun <- settings[as.numeric(args[1]),]
 outcome.type <-  as.character(args[2]) # "continuous" or "binomial" 
 use.SL <- as.logical(args[3])  # When TRUE, use Super Learner for initial Y model and treatment model estimation; if FALSE, use GLM
 doMPI <- as.logical(args[4]) # When TRUE, use MPI parallel processing
+covars40 <- as.logical(args[5]) # When TRUE, generate 40 covariates instead of 6
+covars100 <- as.logical(args[6]) # When TRUE, generate 100 covariates instead of 6
 
 # define parameters
 
@@ -309,6 +318,8 @@ filename <- paste0(output_dir,
                    "_gamma_setting_", gamma.setting,
                    "_outcome_type_", outcome.type,
                    "_use_SL_", use.SL,
+                   "_covars_40_", covars40,
+                   "_covars_100_", covars100,
                    "_scale_continuous_", scale.continuous,
                    "_target_gwt_", target.gwt,".rds")
 
@@ -342,10 +353,10 @@ if(doMPI){
 # Run simulation #
 #####################
 
-print(paste0('simulation setting: ', " R = ", R, ", n = ", n,", J = ",J, ", overlap.setting = ",overlap.setting, ", gamma.setting = ", gamma.setting, ", outcome.type = ", outcome.type, ", use.SL = ",use.SL, ", scale.continuous = ", scale.continuous))
+print(paste0('simulation setting: ', " R = ", R, ", n = ", n,", J = ",J, ", overlap.setting = ",overlap.setting, ", gamma.setting = ", gamma.setting, ", outcome.type = ", outcome.type, ", use.SL = ",use.SL, ", scale.continuous = ", scale.continuous, ", covars40 = ", covars40, ", covars100 = ", covars100))
 
 sim.results <- foreach(r = 1:R, .combine='cbind', .verbose = FALSE) %dopar% {
-  staticSim(r=r, J, n, gbound, ybound, n.folds, overlap.setting, gamma.setting, outcome.type, target.gwt, use.SL, scale.continuous)
+  staticSim(r=r, J, n, gbound, ybound, n.folds, overlap.setting, gamma.setting, outcome.type, target.gwt, use.SL, scale.continuous, covars40, covars100)
 }
 sim.results
 

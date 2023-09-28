@@ -3,7 +3,7 @@ Code and data accompanying the paper ["Targeted learning in observational studie
 
 N.b.: We cannot provide the actual Centers for Medicare & Medicaid Services (CMS) data used in the application because they are protected. The simulated data provided in this repo are for illustrative purposes.
 
-Please cite the paper if you use this repo:
+Please cite these two papers if you use the code or data in this repo:
 
 ```
 @misc{https://doi.org/10.48550/arxiv.2206.15367,
@@ -18,10 +18,22 @@ Please cite the paper if you use this repo:
 }
 ```
 
+```
+@article{https://doi.org/10.1017/S0033291723001502, 
+	title={Antipsychotics and the risk of diabetes and death among adults with serious mental illnesses}, 
+	DOI={10.1017/S0033291723001502}, 
+	journal={Psychological Medicine}, 
+	publisher={Cambridge University Press}, 
+	author={Poulos, Jason and Normand, Sharon-Lise T. and Zelevinsky, Katya and Newcomer, John W. and Agniel, Denis and Abing, Haley K. and Horvitz-Lennon, Marcela}, 
+	year={2023}, 
+	pages={1–8}
+}
+```
+
 Prerequsites
 ------
 
-* **R** (tested on 4.0.1)
+* **R** (tested on 4.3.1 using a 9.2.0 GCC compiler)
 
 * Required **R** packages located in ***package_list.R*** 
 
@@ -81,9 +93,9 @@ Instructions
 
 1. Install require **R** packages: `Rscript package_list.R`
 
-2. For simulations, run: `Rscript tmle_MultinomialTrts.R [arg1] [arg2] [arg3] [arg4]`; where `[arg1]` is a number specifying the simulation setting [1-18], `[arg2]`  is the outcome type ['binomial' or 'continuous'], `[arg3]` is a logical flag if super learner estimation is to be used, and `[arg4]` is a logical flag if MPI parallel processing is used. E.g.,
+2. For simulations, run: `Rscript tmle_MultinomialTrts.R [arg1] [arg2] [arg3] [arg4]`; where `[arg1]` is a number specifying the simulation setting [1-18], `[arg2]`  is the outcome type ['binomial' or 'continuous'], `[arg3]` is a logical flag if super learner estimation is to be used, `[arg4]` is a logical flag if MPI parallel processing is used, and `[arg5]` and `[arg6]` are logical flags for generating higher dimensional covariates, 40 or 100, resp. E.g.,
 
-	`Rscript tmle_MultinomialTrts.R 1 'binomial' 'TRUE' 'TRUE'`
+	`Rscript tmle_MultinomialTrts.R 1 'binomial' 'TRUE' 'TRUE' 'FALSE' 'FALSE'`
 
 3. To plot simulation results, run: `Rscript combine_sim_plots.R [arg1] [arg2] [arg3]`; where `[arg1]` specifies the output path of the simulation results; `[arg2]` specifies the number of treatments [3,6]; `[arg3]` specifies is a logical flag if super learner estimates are to be used (if 'FALSE', GLM estimates are used). E.g., 
 	
