@@ -1,0 +1,15 @@
+#!/bin/bash
+#SBATCH --job-name="packages"
+#SBATCH -e packages.err
+#SBATCH -p priority
+#SBATCH -c 10
+#SBATCH --mem=15GB
+#SBATCH -t 1-00:00:00
+
+ulimit -l unlimited
+
+module load gcc/9.2.0 R/4.3.1
+module load openmpi/4.1.1
+
+#Run the job
+Rscript package_list.R

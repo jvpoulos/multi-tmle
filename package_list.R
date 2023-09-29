@@ -1,4 +1,4 @@
-packages <- c("devtools","ggplot2","nnet","tmle","MASS","purrr","tidyverse","data.table","SuperLearner","reshape2","origami","tictoc","weights","grid","car","latex2exp","cobalt", "WeightIt","VGAM","extraDistr","MCMCpack")
+packages <- c("devtools","ggplot2","nnet","tmle","MASS","purrr","tidyverse","data.table","SuperLearner","reshape2","origami","tictoc","weights","grid","car","latex2exp","cobalt", "WeightIt","VGAM","extraDistr","MCMCpack","survival","survminer")
 
 super.learner <- TRUE
 dependencies <- FALSE # data.table, stringi, HMisc dependencies might be needed for SuperLearner libraries

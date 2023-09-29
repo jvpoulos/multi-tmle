@@ -487,3 +487,6 @@ saveRDS(list("yinitial_tmle"=yinitial_tmle,"Ahat_tmle"=Ahat_tmle,"yhat_tmle"= yh
 
 ## Summary stats and results plots
 source('./tmle_itt_analysis_eda.R')
+
+## Censoring EDA
+source('./tmle_itt_analysis_censoring.R')
