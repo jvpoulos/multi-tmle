@@ -6,7 +6,7 @@
 #SBATCH --mincpus=18
 #SBATCH --mem-per-cpu=5G
 #SBATCH -t 5-00:00:00
-#SBATCH --array=2,4,6,8,10,12,14,16,18
+#SBATCH --array=2,4,8,10,12,14,16,18
 
 ulimit -l unlimited
 
@@ -14,4 +14,4 @@ module load gcc/9.2.0 R/4.3.1
 module load openmpi/4.1.1
 
 #Run the job
-mpirun --mca btl tcp,self Rscript tmle_MultinomialTrts.R ${SLURM_ARRAY_TASK_ID} 'binomial' 'TRUE' 'TRUE' 'TRUE' 'FALSE'
+mpirun --mca btl tcp,self Rscript tmle_MultinomialTrts.R ${SLURM_ARRAY_TASK_ID} 'binomial' 'TRUE' 'TRUE' 'FALSE' 'TRUE'

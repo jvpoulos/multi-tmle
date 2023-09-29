@@ -236,9 +236,8 @@ generateData <- function(r, J, n, overlap.setting, gamma.setting, outcome.type, 
     e_mat[, j] <- exp_xb_mat[,j] / e_denom
   }
   
-  e_mat[k, is.na(e_mat[k, ])] <- 1 # replace any NA with 1
-  
   for(k in 1:n){
+    e_mat[k, is.na(e_mat[k, ])] <- 1 # replace any NA with 1
     D[k,] <- rmultinom(1, 1, prob = e_mat[k,])
   }
   

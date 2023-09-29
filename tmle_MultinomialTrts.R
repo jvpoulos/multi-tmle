@@ -21,6 +21,7 @@ staticSim <- function(r, J, n, gbound, ybound, n.folds, overlap.setting, gamma.s
   library(ranger)
   library(xgboost)
   library(glmnet)
+  library(Rsolnp)
   library(MASS)
   library(VGAM)
   library(extraDistr)

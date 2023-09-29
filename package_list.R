@@ -1,4 +1,4 @@
-packages <- c("devtools","ggplot2","nnet","tmle","MASS","purrr","tidyverse","data.table","SuperLearner","Rsolnp","reshape2","origami","tictoc","weights","grid","car","latex2exp","cobalt", "WeightIt","VGAM","extraDistr","MCMCpack")
+packages <- c("devtools","ggplot2","nnet","tmle","MASS","purrr","tidyverse","data.table","SuperLearner","reshape2","origami","tictoc","weights","grid","car","latex2exp","cobalt", "WeightIt","VGAM","extraDistr","MCMCpack")
 
 super.learner <- TRUE
 dependencies <- FALSE # data.table, stringi, HMisc dependencies might be needed for SuperLearner libraries
@@ -16,12 +16,12 @@ if(dependencies){
 }
 
 # development packages
-#remotes::install_github("tlverse/sl3@v1.4.2") # Metalearner bug in v1.4.4
 remotes::install_github("tlverse/sl3")
-remotes::install_github("tlverse/tmle3")
+remotes::install_github("jvpoulos/Rsolnp") # v1.16
 
 # doMPI
 doMPI <- FALSE
 if(doMPI){
+  install.packages("Rmpi", dependencies=TRUE, repos = "http://cran.us.r-project.org")
   install.packages("doMPI", dependencies=TRUE, repos = "http://cran.us.r-project.org")
 }

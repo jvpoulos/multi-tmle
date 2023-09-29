@@ -93,7 +93,7 @@ Instructions
 
 1. Install require **R** packages: `Rscript package_list.R`
 
-2. For simulations, run: `Rscript tmle_MultinomialTrts.R [arg1] [arg2] [arg3] [arg4]`; where `[arg1]` is a number specifying the simulation setting [1-18], `[arg2]`  is the outcome type ['binomial' or 'continuous'], `[arg3]` is a logical flag if super learner estimation is to be used, `[arg4]` is a logical flag if MPI parallel processing is used, and `[arg5]` and `[arg6]` are logical flags for generating higher dimensional covariates, 40 or 100, resp. E.g.,
+2. For simulations, run: `Rscript tmle_MultinomialTrts.R [arg1] [arg2] [arg3] [arg4]`; where `[arg1]` is a number specifying the simulation setting [1-18], `[arg2]`  is the outcome type ['binomial' or 'continuous'], `[arg3]` is a logical flag if super learner estimation is to be used, `[arg4]` is a logical flag if MPI parallel processing is used, and `[arg5]` and `[arg6]` are logical flags for generating higher dimensional covariates, 40 or 100, resp (J must be 6). E.g.,
 
 	`Rscript tmle_MultinomialTrts.R 1 'binomial' 'TRUE' 'TRUE' 'FALSE' 'FALSE'`
 
