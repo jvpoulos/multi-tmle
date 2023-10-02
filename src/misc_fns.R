@@ -36,6 +36,113 @@ rcauchy_truncated <- function(n, location = 0, scale = 1, lower_limit = -10, upp
   return(x)
 }
 
+truncated_rf <- function(n, df1, df2, lower_bound = 0, upper_bound = 10) {
+  if (lower_bound >= upper_bound) {
+    stop("Lower bound should be less than upper bound")
+  }
+  
+  samples <- numeric(n)
+  count <- 0
+  
+  while (count < n) {
+    x <- rf(n, df1, df2)
+    valid_samples <- x[x >= lower_bound & x <= upper_bound]
+    
+    if (length(valid_samples) > 0) {
+      samples[(count + 1):(count + length(valid_samples))] <- valid_samples
+      count <- count + length(valid_samples)
+    }
+  }
+  
+  return(samples[1:n])
+}
+
+rdirichlet_alt <- function(n, alpha) {
+  k <- length(alpha)
+  if (k <= 1) {
+    stop("The length of alpha should be greater than 1")
+  }
+  
+  out <- matrix(0, nrow = n, ncol = k)
+  
+  for (i in 1:n) {
+    x <- rgamma(k, shape = alpha)
+    out[i, ] <- x / sum(x)
+  }
+  
+  return(out)
+}
+
+truncated_rnbinom <- function(n, size, prob, min_val, max_val) {
+  result <- integer(0)
+  while (length(result) < n) {
+    sample <- rnbinom(n * 2, size = size, prob = prob)  # Generate more samples than needed
+    sample <- sample[sample >= min_val & sample <= max_val]  # Truncate the samples
+    result <- c(result, sample)
+  }
+  return(result[1:n])
+}
+
+truncated_rsignrank <- function(n, nn, min_val, max_val) {
+  result <- integer(0)
+  while (length(result) < n) {
+    sample <- rsignrank(n * 2, nn)  # Generate more samples than needed
+    sample <- sample[sample >= min_val & sample <= max_val]  # Truncate the samples
+    result <- c(result, sample)
+  }
+  return(result[1:n])
+}
+
+truncated_rwilcox <- function(n, m, u, min_val, max_val) {
+  result <- integer(0)
+  while (length(result) < n) {
+    sample <- rwilcox(n * 2, m, u)  # Generate more samples than needed
+    sample <- sample[sample >= min_val & sample <= max_val]  # Truncate the samples
+    result <- c(result, sample)
+  }
+  return(result[1:n])
+}
+
+truncated_rchisq <- function(n, df, min_val, max_val) {
+  result <- numeric(0)
+  while (length(result) < n) {
+    sample <- rchisq(n * 2, df)  # Generate more samples than needed
+    sample <- sample[sample >= min_val & sample <= max_val]  # Truncate the samples
+    result <- c(result, sample)
+  }
+  return(result[1:n])
+}
+
+truncated_rgeom <- function(n, prob, min_val, max_val) {
+  result <- numeric(0)
+  while (length(result) < n) {
+    sample <- rgeom(n * 2, prob)  # Generate more samples than needed
+    sample <- sample[sample >= min_val & sample <= max_val]  # Truncate the samples
+    result <- c(result, sample)
+  }
+  return(result[1:n])
+}
+
+truncated_rpois <- function(n, lambda, min_val, max_val) {
+  result <- numeric(0)
+  while (length(result) < n) {
+    sample <- rpois(n * 2, lambda)  # Generate more samples than needed
+    sample <- sample[sample >= min_val & sample <= max_val]  # Truncate the samples
+    result <- c(result, sample)
+  }
+  return(result[1:n])
+}
+
+truncated_rt <- function(n, df, min_val, max_val) {
+  result <- numeric(0)
+  while (length(result) < n) {
+    sample <- rt(n * 2, df)  # Generate more samples than needed
+    sample <- sample[sample >= min_val & sample <= max_val]  # Truncate the samples
+    result <- c(result, sample)
+  }
+  return(result[1:n])
+}
+
 # function to bound probabilities to be used when making predictions
 boundProbs <- function(x,bounds=c(0.001,0.999)){
   x[x>max(bounds)] <- max(bounds)

@@ -25,7 +25,6 @@ staticSim <- function(r, J, n, gbound, ybound, n.folds, overlap.setting, gamma.s
   library(MASS)
   library(VGAM)
   library(extraDistr)
-  library(MCMCpack)
   
   print(paste("This is simulation run number",r, "\n"))
   

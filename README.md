@@ -33,7 +33,7 @@ Please cite these two papers if you use the code or data in this repo:
 Prerequsites
 ------
 
-* **R** (tested on 4.3.1 using a 9.2.0 GCC compiler)
+* **R** (tested on 4.0.1 using a 6.2.0 GCC compiler)
 
 * Required **R** packages located in ***package_list.R*** 
 
@@ -87,6 +87,8 @@ Contents
 * ***tmle_itt_analysis.R*** code for ITT analysis on simulated CMS data, with J=6 levels of treatment.
 
 * ***tmle_itt_analysis_eda.R*** code for producing descriptive plots and tables for the ITT analysis.
+
+* ***tmle_itt_analysis_censoring.R*** code for employing Kaplan-Meier survival curves and Cox proportional hazards models to better understand the censoring mechanism and its potential impact on the results. 
 
 Instructions
 ------
