@@ -21,10 +21,12 @@ if(!dir.exists(results_dir)){
 # Define parameters
 
 options(echo=TRUE)
-args <- commandArgs(trailingOnly = TRUE) # c("outputs/20230427", 6, 'TRUE')
+args <- commandArgs(trailingOnly = TRUE) # args <- c("outputs/20230427", 6, 'TRUE', 'FALSE', 'FALSE') args <- c("outputs/20231002", 6, 'TRUE', 'TRUE', 'FALSE')
 output.path <- as.character(args[1])
 J <- as.numeric(args[2])
 use.SL <- as.character(args[3])
+covars40 <- as.character(args[4])
+covars100 <- as.character(args[5])
 
 estimand <- "ate"
 m <- choose(J, 2)
@@ -51,6 +53,9 @@ filenames <- filenames[grep(paste0("J_",J),filenames)]
 filenames <- filenames[grep(paste0("n_",n,"_"),filenames)]
 filenames <- filenames[grep(paste0("outcome_type_",outcome.type),filenames)]
 filenames <- filenames[grep(paste0("use_SL_",use.SL),filenames)]
+filenames <- filenames[grep(paste0("covars_40_",covars40),filenames)]
+filenames <- filenames[grep(paste0("covars_100_",covars100),filenames)]
+
 if(any( duplicated(substring(filenames, 18)))){
   print("removing duplicate filenames")
   filenames <- filenames[-which(duplicated(substring(filenames, 18)))]
@@ -299,7 +304,7 @@ z.bias <- gtable_add_rows(z.bias, unit(1/5, "line"), min(posT$t))
 grid.newpage()
 grid.draw(z.bias)
 
-ggsave(paste0("sim_results/static_simulation_bias_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_R_",results[[1]][[1]]$R,".png"),plot = z.bias,scale=1.75)
+ggsave(paste0("sim_results/static_simulation_bias_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.bias,scale=1.75)
 
 # coverage
 sim.results.coverage <- ggplot(data=results_long[results_long$variable=="CP",],
@@ -351,7 +356,7 @@ z.coverage <- gtable_add_rows(z.coverage, unit(1/5, "line"), min(posT$t))
 grid.newpage()
 grid.draw(z.coverage)
 
-ggsave(paste0("sim_results/static_simulation_coverage_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_R_",results[[1]][[1]]$R,".png"),plot = z.coverage,scale=1.75)
+ggsave(paste0("sim_results/static_simulation_coverage_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.coverage,scale=1.75)
 
 # CI width
 sim.results.CI.width <- ggplot(data=results_long[results_long$variable=="CIW",],
@@ -402,7 +407,7 @@ z.CI.width <- gtable_add_rows(z.CI.width, unit(1/5, "line"), min(posT$t))
 grid.newpage()
 grid.draw(z.CI.width)
 
-ggsave(paste0("sim_results/static_simulation_ci_width_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_R_",results[[1]][[1]]$R,".png"),plot = z.CI.width,scale=1.75)
+ggsave(paste0("sim_results/static_simulation_ci_width_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.CI.width,scale=1.75)
 
 ## coverage bar plot (avg. across comparisons)
 
@@ -464,9 +469,9 @@ grid.newpage()
 grid.draw(z.cp.avg)
 
 if(use.SL){
-  ggsave(paste0("sim_results/static_simulation_cp_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_R_",results[[1]][[1]]$R,".png"),plot = z.cp.avg,scale=1.75)
+  ggsave(paste0("sim_results/static_simulation_cp_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.cp.avg,scale=1.75)
 }else{
-  ggsave(paste0("sim_results/static_simulation_cp_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_R_",results[[1]][[1]]$R,".png"),plot = z.cp.avg,scale=2)
+  ggsave(paste0("sim_results/static_simulation_cp_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.cp.avg,scale=2)
 }
 
 ## bias bar plot (avg. across comparisons)
@@ -528,9 +533,9 @@ grid.newpage()
 grid.draw(z.bias.avg)
 
 if(use.SL){
-  ggsave(paste0("sim_results/static_simulation_bias_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_R_",results[[1]][[1]]$R,".png"),plot = z.bias.avg,scale=1.75)
+  ggsave(paste0("sim_results/static_simulation_bias_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.bias.avg,scale=1.75)
 }else{
-  ggsave(paste0("sim_results/static_simulation_bias_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_R_",results[[1]][[1]]$R,".png"),plot = z.bias.avg,scale=2)
+  ggsave(paste0("sim_results/static_simulation_bias_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.bias.avg,scale=2)
 }
 
 ## CIW bar plot (avg. across comparisons)
@@ -592,9 +597,9 @@ grid.newpage()
 grid.draw(z.CIW.avg)
 
 if(use.SL){
-  ggsave(paste0("sim_results/static_simulation_CIW_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_R_",results[[1]][[1]]$R,".png"),plot = z.CIW.avg,scale=1.75)
+  ggsave(paste0("sim_results/static_simulation_CIW_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.CIW.avg,scale=1.75)
 }else{
-  ggsave(paste0("sim_results/static_simulation_CIW_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_R_",results[[1]][[1]]$R,".png"),plot = z.CIW.avg,scale=2)
+  ggsave(paste0("sim_results/static_simulation_CIW_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.CIW.avg,scale=2)
 }
 
 if(use.SL){
@@ -806,7 +811,7 @@ if(use.SL){
   grid.newpage()
   grid.draw(z.A)
   
-  ggsave(paste0("sim_results/static_simulation_obs_A_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_R_",results[[1]][[1]]$R,".png"),plot = z.A,scale=1.75)
+  ggsave(paste0("sim_results/static_simulation_obs_A_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.A,scale=1.75)
   
   # observed outcomes
   sim.results.Y <- ggplot(data=results_AY_long[results_AY_long$variable=="Obs.Y",],
@@ -856,7 +861,7 @@ if(use.SL){
   grid.newpage()
   grid.draw(z.Y)
   
-  ggsave(paste0("sim_results/static_simulation_Y_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_R_",results[[1]][[1]]$R,".png"),plot = z.Y,scale=1.75)
+  ggsave(paste0("sim_results/static_simulation_Y_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.Y,scale=1.75)
   
   # treatment estimates
   sim.results.A.mean <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="A.mean",],  
@@ -902,7 +907,7 @@ if(use.SL){
   grid.newpage()
   grid.draw(z.A.mean)
   
-  ggsave(paste0("sim_results/static_simulation_est_A_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_R_",results[[1]][[1]]$R,".png"),plot = z.A.mean,scale=1.75)
+  ggsave(paste0("sim_results/static_simulation_est_A_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.A.mean,scale=1.75)
   
   # treatment estimates -diff
   sim.results.A.mean.diff <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="A.mean.diff",],  
@@ -948,7 +953,7 @@ if(use.SL){
   grid.newpage()
   grid.draw(z.A.mean.diff)
   
-  ggsave(paste0("sim_results/static_simulation_est_A_diff_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_R_",results[[1]][[1]]$R,".png"),plot = z.A.mean.diff,scale=1.75)
+  ggsave(paste0("sim_results/static_simulation_est_A_diff_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.A.mean.diff,scale=1.75)
   
   # initial outcome estimates
   sim.results.Y.initial <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="Y.initial",], 
@@ -994,7 +999,7 @@ if(use.SL){
   grid.newpage()
   grid.draw(z.Y.initial)
   
-  ggsave(paste0("sim_results/static_simulation_est_Y_initial_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_R_",results[[1]][[1]]$R,".png"),plot = z.Y.initial,scale=1.75)
+  ggsave(paste0("sim_results/static_simulation_est_Y_initial_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.Y.initial,scale=1.75)
   
   # initial outcome estimates - diff
   sim.results.Y.initial.diff <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="Y.initial.diff",], 
@@ -1040,7 +1045,7 @@ if(use.SL){
   grid.newpage()
   grid.draw(z.Y.initial.diff)
   
-  ggsave(paste0("sim_results/static_simulation_est_Y_initial_diff_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_R_",results[[1]][[1]]$R,".png"),plot = z.Y.initial.diff,scale=1.75)
+  ggsave(paste0("sim_results/static_simulation_est_Y_initial_diff_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.Y.initial.diff,scale=1.75)
   
   # ESS
   sim.results.ESS <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="ESS",],
@@ -1086,7 +1091,7 @@ if(use.SL){
   grid.newpage()
   grid.draw(z.ESS)
   
-  ggsave(paste0("sim_results/static_simulation_est_ESS_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_R_",results[[1]][[1]]$R,".png"),plot = z.ESS,scale=1.75)
+  ggsave(paste0("sim_results/static_simulation_est_ESS_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.ESS,scale=1.75)
   
   # ESS_ratio
   sim.results.ESS_ratio <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="ESS_ratio",],
@@ -1133,5 +1138,5 @@ if(use.SL){
   grid.newpage()
   grid.draw(z.ESS_ratio)
   
-  ggsave(paste0("sim_results/static_simulation_est_ESS_ratio_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_R_",results[[1]][[1]]$R,".png"),plot = z.ESS_ratio,scale=1.75)
+  ggsave(paste0("sim_results/static_simulation_est_ESS_ratio_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.ESS_ratio,scale=1.75)
 }

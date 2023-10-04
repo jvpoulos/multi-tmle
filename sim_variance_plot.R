@@ -19,9 +19,11 @@ if(!dir.exists(results_dir)){
 # Define parameters
 
 options(echo=TRUE)
-args <- commandArgs(trailingOnly = TRUE) # args <- c("outputs/20230427", 6)
+args <- commandArgs(trailingOnly = TRUE) # args <- c("outputs/20230427", 6, 'FALSE', 'FALSE') args <- c("outputs/20231002", 6, 'FALSE', 'FALSE')
 output.path <- as.character(args[1])
 J <- as.numeric(args[2])
+covars40 <- as.character(args[3])
+covars100 <- as.character(args[4])
 
 estimand <- "ate"
 m <- choose(J, 2)
@@ -233,4 +235,4 @@ z.rel.var.avg <- gtable_add_rows(z.rel.var.avg, unit(1/5, "line"), min(posT$t))
 grid.newpage()
 grid.draw(z.rel.var.avg)
 
-ggsave(paste0("sim_results/static_simulation_rel_var_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_R_",results[[1]][[1]]$R,".png"),plot = z.rel.var.avg,scale=1.75)
+ggsave(paste0("sim_results/static_simulation_rel_var_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.rel.var.avg,scale=1.75)

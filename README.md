@@ -74,6 +74,10 @@ Contents
 
 	+ *use.SL*: logical flag. When TRUE, use Super Learner for treatment and outcome model estimation; if FALSE, use GLM. Default is TRUE. 
 
+	+ *covars40*: logical flag. When TRUE, generate 40 covariates when J=6; if FALSE, generate 6. Default is FALSE. 
+
+	+ *covars100*: logical flag. When TRUE, generate 100 covariates when J=6; if FALSE, generate 6. Default is FALSE. 
+
 	+ *scale.continuous*: logical flag. When center and scale continuous variables in outcome and treatment models. Default is TRUE. 
 
 	+ *n.folds*: number of cross-validation folds for Super Learner. Defaults to 2 and is ignored if *use.SL* is FALSE. 
@@ -99,13 +103,13 @@ Instructions
 
 	`Rscript tmle_MultinomialTrts.R 1 'binomial' 'TRUE' 'TRUE' 'FALSE' 'FALSE'`
 
-3. To plot simulation results, run: `Rscript combine_sim_plots.R [arg1] [arg2] [arg3]`; where `[arg1]` specifies the output path of the simulation results; `[arg2]` specifies the number of treatments [3,6]; `[arg3]` specifies is a logical flag if super learner estimates are to be used (if 'FALSE', GLM estimates are used). E.g., 
+3. To plot simulation results, run: `Rscript combine_sim_plots.R [arg1] [arg2] [arg3]`; where `[arg1]` specifies the output path of the simulation results; `[arg2]` specifies the number of treatments [3,6]; `[arg3]` specifies is a logical flag if super learner estimates are to be used (if 'FALSE', GLM estimates are used); and `[arg4]` and `[arg5]` are logical flags for generating higher dimensional covariates, 40 or 100, resp (J must be 6). E.g., 
 	
-	`Rscript combine_sim_plots.R 'outputs/20230427' 6 'TRUE'`
+	`Rscript combine_sim_plots.R 'outputs/20230427' 6 'TRUE' 'FALSE' 'FALSE'`
 
-4. To plot relative precision, run: `Rscript sim_variance_plot.R [arg1]`; where `[arg1]` specifies the output path of the simulation results; and `[arg2]` specifies the number of treatments [3,6]. E.g., 
+4. To plot relative precision, run: `Rscript sim_variance_plot.R [arg1]`; where `[arg1]` specifies the output path of the simulation results; `[arg2]` specifies the number of treatments [3,6]; and `[arg3]` and `[arg4]` are logical flags for generating higher dimensional covariates, 40 or 100, resp (J must be 6).. E.g., 
 	
-	`Rscript sim_variance_plot.R 'outputs/20230427' 6`
+	`Rscript sim_variance_plot.R 'outputs/20230427' 6 'FALSE' 'FALSE'`
 
 5. For ITT analysis on simulated data, run in bash script: `Rscript tmle_itt_analysis.R [arg1] [arg2] [arg3] [arg4] [arg5] [arg6]`; where `[arg1]` specifies the outcome ['combined', 'diabetes', or 'death'] ('combined' is death or diabetes),  `[arg2]`  is the outcome type ['binomial'], `[arg3]`  is the condition for conditional average treatment effects ['none', 'schizophrenia', 'mdd', 'bipolar','black','latino','white', 'other','no_drug', 'young', 'no_drug_young'], `[arg4]` is a string that specifies the folder in the output directory of previously saved super learner models or 'none', `[arg5]` is a logical flag if super learner estimation is to be used, `[arg6]` is a logical flag if simulated data is to be used. E.g., 
 
