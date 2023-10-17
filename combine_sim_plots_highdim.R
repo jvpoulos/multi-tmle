@@ -1,5 +1,5 @@
 ############################################################################################
-# Combine plots from static setting simulations                                       #
+# Combine plots from static setting simulations, comparing 6 vs 40 vs 100 covariates       #
 ############################################################################################
 
 library(tidyverse)
@@ -21,20 +21,21 @@ if(!dir.exists(results_dir)){
 # Define parameters
 
 options(echo=TRUE)
-args <- commandArgs(trailingOnly = TRUE) # args <- c("outputs/20230427", 6, 'TRUE', 'FALSE', 'FALSE')
+args <- commandArgs(trailingOnly = TRUE) # args <- c("outputs/20231009", "outputs/20230427", 6, 'TRUE', 'TRUE', 'TRUE')
 output.path <- as.character(args[1])
-J <- as.numeric(args[2])
-use.SL <- as.character(args[3])
-covars40 <- as.character(args[4])
-covars100 <- as.character(args[5])
+output.path2 <- as.character(args[2])
+J <- as.numeric(args[3])
+use.SL <- as.character(args[4])
+covars40 <- as.character(args[5])
+covars100 <- as.character(args[6])
 
 estimand <- "ate"
 m <- choose(J, 2)
 n <- ifelse(J==6, 10000, 5000)
 outcome.type <- 'binomial'
 
-overlap.setting <- c("adequate","inadequate","rct")
-gamma.setting <- c("zero","low","yang")
+overlap.setting <- "inadequate" #c("adequate","inadequate","rct")
+gamma.setting <- "zero" # c("zero","low","yang")
 
 estimators <- c("tmle","tmle_bin", "tmle_glm","tmle_glm_bin", "gcomp", "gcomp_glm", "iptw", "iptw_bin",  "iptw_glm", "iptw_glm_bin","aiptw", "aiptw_bin","aiptw_glm", "aiptw_glm_bin")
 if(use.SL){
@@ -47,14 +48,14 @@ if(use.SL){
 
 n.estimators <- as.numeric(length(estimators))
 
-filenames <- c(list.files(path=output.path, pattern = ".rds", full.names = TRUE))
+filenames <- c(list.files(path=output.path, pattern = ".rds", full.names = TRUE), list.files(path=output.path2, pattern = ".rds", full.names = TRUE))
 
 filenames <- filenames[grep(paste0("J_",J),filenames)]
 filenames <- filenames[grep(paste0("n_",n,"_"),filenames)]
 filenames <- filenames[grep(paste0("outcome_type_",outcome.type),filenames)]
 filenames <- filenames[grep(paste0("use_SL_",use.SL),filenames)]
-filenames <- filenames[grep(paste0("covars_40_",covars40),filenames)]
-filenames <- filenames[grep(paste0("covars_100_",covars100),filenames)]
+filenames <- filenames[grep("overlap_setting_inadequate", filenames)]
+filenames <- filenames[grep("gamma_setting_zero", filenames)]
 
 if(any( duplicated(substring(filenames, 18)))){
   print("removing duplicate filenames")
@@ -65,6 +66,7 @@ results <- list() # structure is: [[filename]][[comparison]][[metric]]
 for(f in filenames){
   print(f)
   result.matrix <- readRDS(f)
+  ncovars <- ifelse(grep("covars_40_TRUE",f), 40, ifelse(grep("covars_100_TRUE",f), 100, 6))
   R <- ncol(result.matrix )
   if(isTRUE(grep("use_SL_FALSE",f)==1)){
     estimator <- estimators[grep("glm", estimators)]
@@ -79,7 +81,7 @@ for(f in filenames){
   colnames(bias) <- paste0("bias_",estimand,"_",estimators)
   CP <- matrix(NA, R, n.estimators)
   colnames(CP) <- paste0("CP_",estimand,"_",estimators)
-  CIW <- matrix(NA, R, n.estimators)
+  CIW <- matrix(NA, R,  n.estimators)
   colnames(CIW) <- paste0("CIW_",estimand,"_",estimators)
   for(j in 1:m){
     for(i in paste0("bias_",estimand,"_",estimator)){
@@ -91,7 +93,7 @@ for(f in filenames){
     for(i in paste0("CIW_",estimand,"_",estimator)){
       CIW[,which(i==colnames(CIW))] <- unlist(lapply(result.matrix[i,], "[", j))[1:R]
     }
-    results[[f]][[j]] <- list("bias"=bias,"CP"=CP,"CIW"=CIW,"R"=R)
+    results[[f]][[j]] <- list("bias"=bias,"CP"=CP,"CIW"=CIW,"R"=R,"ncovars"=ncovars)
   }
 }
 
@@ -118,6 +120,10 @@ results.df <- data.frame("abs.bias"=abs(unlist(bias)),
                          "Coverage"=unlist(CP),
                          "CIW"=unlist(CIW),
                          "filename"=c(rep(unlist(sapply(1:length(filenames), function(i) rep(filenames[i], length.out=results[[i]][[1]]$R*m))), n.estimators)))
+
+results.df$ncovars <- "6"
+results.df$ncovars[grep("covars_40_TRUE",results.df$filename)] <- "40" 
+results.df$ncovars[grep("covars_100_TRUE",results.df$filename)] <- "100" 
 
 if(use.SL){
   results.df$Estimator <- c(rep("TMLE-multi. (SL)",length.out=length(c(unlist(CP[[1]])))), 

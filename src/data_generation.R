@@ -236,7 +236,7 @@ generateData <- function(r, J, n, overlap.setting, gamma.setting, outcome.type, 
   for(k in 1:n){
     if(covars40|covars100){
       e_mat[k, is.na(e_mat[k, ])] <- .Machine$double.ep # replace any NA pos. value
-      adjusted_probs <- e_mat[k,] + (1/J)  # Adding 1/J to each class probability
+      adjusted_probs <- e_mat[k,] + (1/20)  # Adding .05 to each class probability
       D[k,] <- rmultinom(1, 1, prob = adjusted_probs)  # Multinomial distribution with adjusted probabilities
     }else{
       D[k,] <- rmultinom(1, 1, prob = e_mat[k,]) # internally normalized to sum 1

@@ -86,6 +86,8 @@ Contents
 
 	+ *outcome.type*: Adjusts the form of the simulation outcome model and outcome model estimation. Defaults at 'binomial'.
 
+* ***combine_sim_plots_highdem.R*** and ***sim_variance_plot_highdem.R*** plotting scripts specifically for simulations with high-dimensional covariates (40 and 100).
+
 * ***simdata_from_basevars.RData*** simumlated data based on the actual CMS data used in the paper. 
 
 * ***tmle_itt_analysis.R*** code for ITT analysis on simulated CMS data, with J=6 levels of treatment.

@@ -265,7 +265,7 @@ settings <- expand.grid("J"=c(3,6),
 settings$n <- ifelse(settings$J==6, 10000, 5000)
 
 options(echo=TRUE)
-args <- commandArgs(trailingOnly = TRUE) # command line arguments # args <- c("2",'binomial', 'TRUE', 'TRUE', 'TRUE', 'FALSE')
+args <- commandArgs(trailingOnly = TRUE) # command line arguments # args <- c("6",'binomial', 'TRUE', 'TRUE', 'FALSE', 'TRUE')
 thisrun <- settings[as.numeric(args[1]),]
 outcome.type <-  as.character(args[2]) # "continuous" or "binomial" 
 use.SL <- as.logical(args[3])  # When TRUE, use Super Learner for initial Y model and treatment model estimation; if FALSE, use GLM
@@ -280,7 +280,11 @@ n <- as.numeric(thisrun[2]) # total sample size
 overlap.setting <- thisrun[[3]] # "adequate"= adequate overlap scenario of Li and Li (2019); "inadequate" overlap scenario of Yang et al. (2016); "rct": kappa values all zero
 gamma.setting <- thisrun[[4]] # zero"= gamma values are all zero, so that there is no treatment effect; "yang"= use values from Yang et al. (2016); "li" use values from Li and Li (2019)
 
-R <- 1000 # number of simulation runs
+if(covars40 | covars100){
+  R <- 100 # number of simulation runs
+}else{
+  R <- 1000 # number of simulation runs
+}
 
 gbound <- c(0.001,0.999) # define bounds to be used for the propensity score
 

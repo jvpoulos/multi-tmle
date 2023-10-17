@@ -4,8 +4,10 @@
 
 # Load required libraries
 library(survival)
+library(survRM2)
 library(survminer)
 library(weights)
+library(ggplot2)
 
 # output directory
 output_dir <- './outputs/'
@@ -32,8 +34,8 @@ if(use.simulated){
   fup3yr_episode_months_deid <- simdata_from_basevars
 }else{
   load("/data/MedicaidAP_associate/poulos/fup3yr_episode_months_deid_fixmonthout.RData") # run on Argos
+  print(paste0("Original data dimension: ", dim(fup3yr_episode_months_deid)))
 }
-
 
 # covariates
 L.unscaled <- cbind(dummify(factor(fup3yr_episode_months_deid $state_character),show.na = FALSE)[,-c(6)],
@@ -83,13 +85,19 @@ if(use.SL==FALSE){ # exclude multicolinear variables for GLM (VIF)
 
 A <- factor(fup3yr_episode_months_deid$drug_group) # categorical
 
-C <- dummify(factor(fup3yr_episode_months_deid$censoring_cause_4cats)) # Overall cause of censoring - 4 categories,
-
-days <- fup3yr_episode_months_deid$days_to_end_of_followup # Days to end of followup (min (dod_both_sources,censored_date,days_to_index_plus_3yrs))
-
-print(aggregate(C, by=list(A), FUN=mean))
-
-print(aggregate(days, by=list(A), FUN=mean))
+if(use.simulated==FALSE){
+  C <- dummify(factor(fup3yr_episode_months_deid$censoring_cause_4cats)) # Overall cause of censoring - 4 categories,
+  
+  print(aggregate(C, by=list(A), FUN=mean))
+  
+  print(summary(C))
+  
+  days <- fup3yr_episode_months_deid$days_to_end_of_followup # Days to end of followup (min (dod_both_sources,censored_date,days_to_index_plus_3yrs))
+  
+  print(aggregate(days, by=list(A), FUN=mean))
+  
+  print(summary(days))
+}
 
 ##Kaplan-Meier Survival Curves
 ## plot Kaplan-Meier survival curves for each treatment group
@@ -97,48 +105,99 @@ print(aggregate(days, by=list(A), FUN=mean))
 fup3yr_episode_months_deid$month_number <- fup3yr_episode_months_deid$month_number+1 # baseline starts at t=1
 
 # Censoring dummy
-fup3yr_episode_months_deid$censor <- ifelse(fup3yr_episode_months_deid$days_to_censored <= (1095/max(fup3yr_episode_months_deid$month_number))*fup3yr_episode_months_deid$month_number,1,0)
+fup3yr_episode_months_deid$censor <- ifelse(fup3yr_episode_months_deid$days_to_censored <= (1095/36)*fup3yr_episode_months_deid$month_number,1,0)
+
+print(aggregate(fup3yr_episode_months_deid$censor, by=list(A), FUN=mean))
+
+print(summary(fup3yr_episode_months_deid$censor))
 
 # Create the survival object
 surv_obj <- Surv(time = fup3yr_episode_months_deid$month_number, event = fup3yr_episode_months_deid$censor)
 
+# fit Kaplan-Meier survival curves for each drug group
+km_fits <- survfit(surv_obj ~ factor(fup3yr_episode_months_deid$drug_group))
+
 # Plot Kaplan-Meier survival curves
 g <- ggsurvplot(
-  fit = survfit(surv_obj ~ factor(fup3yr_episode_months_deid$drug_group)),
+  fit = km_fits,
   data = fup3yr_episode_months_deid,
-  risk.table = "abs_pct",
   palette="lancet",
-  combine = TRUE,
-  ylab= "Censoring probability",
+  fun = "pct",
+  ylab= "Share of patients uncensored (%)",
   xlab= "Month",
-  legend="top",
+  legend="bottom",
   legend.title="Antipsychotic",
   legend.labs=c("Reference","A","B","C","D","E"),
-  surv.scale="percent",
-  xlim=c(1,37),
-  tables.y.text=TRUE,
-  risk.table.title="Number of patients at risk of censoring (%)",
-  tables.theme = theme_cleantable()
-)
+) 
 
 png(paste0(output_dir,"censoring_KM_plot.png"),width = 780, height = 780)
 print(g) 
 dev.off() # Close the file
 
+# KZ -  change Y-axis scale for KM curve plot
+g$plot <- g$plot + ylim(c(0.90, 1))
+
+png(paste0(output_dir,"censoring_KM_plot_yaxis_90_to_100.png"),width = 780, height = 780)
+print(g) 
+dev.off() # Close the file
+
+## Restricted mean survival time (RMST) 
+
+# Identify the unique drug groups
+proper <- function(x) paste0(toupper(substr(x, 1, 1)), tolower(substring(x, 2)))
+fup3yr_episode_months_deid$drug_group <- proper(fup3yr_episode_months_deid$drug_group)
+unique_drug_groups <- unique(factor(fup3yr_episode_months_deid$drug_group))[-6] # omit Reference
+unique_drug_groups <- droplevels(unique_drug_groups)
+
+# Initialize an empty vector to hold RMST values
+rmst_values_nocovars <- rmst_values_covars <- numeric(length(unique_drug_groups))
+
+# Calculate RMST difference between reference drug and each comparator
+# comparing each treatment drug vs. Reference
+# status =1: censoring occurred
+
+rmst_values_nocovars <- lapply(1:length(unique_drug_groups), function(i)
+  rmst2(time = fup3yr_episode_months_deid[fup3yr_episode_months_deid$drug_group%in%c(as.character(unique_drug_groups[i]),"Aripiprazole"),]$month_number, 
+        status = fup3yr_episode_months_deid[fup3yr_episode_months_deid$drug_group%in%c(as.character(unique_drug_groups[i]),"Aripiprazole"),]$censor, 
+        arm = ifelse(fup3yr_episode_months_deid[fup3yr_episode_months_deid$drug_group%in%c(as.character(unique_drug_groups[i]),"Aripiprazole"),]$drug_group==unique_drug_groups[i],1,0)))
+
+rmst_values_covars <- lapply(1:length(unique_drug_groups), function(i)
+  rmst2(time = fup3yr_episode_months_deid[fup3yr_episode_months_deid$drug_group%in%c(as.character(unique_drug_groups[i]),"Aripiprazole"),]$month_number, 
+        status = fup3yr_episode_months_deid[fup3yr_episode_months_deid$drug_group%in%c(as.character(unique_drug_groups[i]),"Aripiprazole"),]$censor, 
+        arm = ifelse(fup3yr_episode_months_deid[fup3yr_episode_months_deid$drug_group%in%c(as.character(unique_drug_groups[i]),"Aripiprazole"),]$drug_group==unique_drug_groups[i],1,0), 
+        covariates=L[which(fup3yr_episode_months_deid$drug_group%in%c(as.character(unique_drug_groups[i]),"Aripiprazole")),]))
+
+names(rmst_values_covars) <- names(rmst_values_nocovars) <- unique_drug_groups
+
+for(i in 1:length(unique_drug_groups)){
+  print(paste("RMST differences between Aripiprazole (arm=0) and comparator (arm=1)", unique_drug_groups[i]))
+  print(rmst_values_nocovars[[i]])
+  print(rmst_values_covars[[i]])
+}
+
 ## Cox Proportional Hazards Models
 ## assess the impact of treatment assignment and other covariates on the hazard of being censored
 
-# Fit the Cox proportional hazards model
-cox_model <- coxph(surv_obj ~ fup3yr_episode_months_deid$drug_group + L)
+# Fit the Cox proportional hazards model with and without covars
+cox_model_covars <- coxph(surv_obj ~ fup3yr_episode_months_deid$drug_group + L)
+cox_model_no_covars <- coxph(surv_obj ~ fup3yr_episode_months_deid$drug_group)
 
 # Summary of the model
-summary(cox_model)
+summary(cox_model_covars)
+summary(cox_model_no_covars)
 
 # Test the assumption of proportional hazards
-cox_zph <- cox.zph(cox_model)
-print(cox_zph)
+cox_zph_covars <- cox.zph(cox_model_covars)
+print(cox_zph_covars)
+
+cox_zph_no_covars <- cox.zph(cox_model_no_covars)
+print(cox_zph_no_covars)
 
 # Plot the scaled Schoenfeld residuals to visualize the assumption
-png(paste0(output_dir,"schoenfeld_plot.png"),width = 780, height = 780)
-plot(cox_zph, xlab="Month")
+png(paste0(output_dir,"schoenfeld_plot_covars.png"),width = 780, height = 780)
+plot(cox_zph_covars, xlab="Month")
+dev.off() # Close the file
+
+png(paste0(output_dir,"schoenfeld_plot_no_covars.png"),width = 780, height = 780)
+plot(cox_zph_no_covars, xlab="Month")
 dev.off() # Close the file
