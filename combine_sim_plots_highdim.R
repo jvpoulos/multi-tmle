@@ -21,21 +21,22 @@ if(!dir.exists(results_dir)){
 # Define parameters
 
 options(echo=TRUE)
-args <- commandArgs(trailingOnly = TRUE) # args <- c("outputs/20231009", "outputs/20230427", 6, 'TRUE', 'TRUE', 'TRUE')
+args <- commandArgs(trailingOnly = TRUE) # args <- c("outputs/20231016", "outputs/20231019", "outputs/20231030", 6, 'TRUE', 'TRUE', 'TRUE')
 output.path <- as.character(args[1])
 output.path2 <- as.character(args[2])
-J <- as.numeric(args[3])
-use.SL <- as.character(args[4])
-covars40 <- as.character(args[5])
-covars100 <- as.character(args[6])
+output.path3 <- as.character(args[3])
+J <- as.numeric(args[4])
+use.SL <- as.character(args[5])
+covars40 <- as.character(args[6])
+covars100 <- as.character(args[7])
 
 estimand <- "ate"
 m <- choose(J, 2)
 n <- ifelse(J==6, 10000, 5000)
 outcome.type <- 'binomial'
 
-overlap.setting <- "inadequate" #c("adequate","inadequate","rct")
-gamma.setting <- "zero" # c("zero","low","yang")
+overlap.setting <- c("adequate","inadequate","rct")
+gamma.setting <- c("zero","low","yang") 
 
 estimators <- c("tmle","tmle_bin", "tmle_glm","tmle_glm_bin", "gcomp", "gcomp_glm", "iptw", "iptw_bin",  "iptw_glm", "iptw_glm_bin","aiptw", "aiptw_bin","aiptw_glm", "aiptw_glm_bin")
 if(use.SL){
@@ -48,14 +49,13 @@ if(use.SL){
 
 n.estimators <- as.numeric(length(estimators))
 
-filenames <- c(list.files(path=output.path, pattern = ".rds", full.names = TRUE), list.files(path=output.path2, pattern = ".rds", full.names = TRUE))
+filenames <- c(list.files(path=output.path, pattern = ".rds", full.names = TRUE), 
+               list.files(path=output.path2, pattern = ".rds", full.names = TRUE))
 
 filenames <- filenames[grep(paste0("J_",J),filenames)]
 filenames <- filenames[grep(paste0("n_",n,"_"),filenames)]
 filenames <- filenames[grep(paste0("outcome_type_",outcome.type),filenames)]
 filenames <- filenames[grep(paste0("use_SL_",use.SL),filenames)]
-filenames <- filenames[grep("overlap_setting_inadequate", filenames)]
-filenames <- filenames[grep("gamma_setting_zero", filenames)]
 
 if(any( duplicated(substring(filenames, 18)))){
   print("removing duplicate filenames")
@@ -182,7 +182,7 @@ results.df <- results.df[rowSums(is.na(results.df[,1:3])) ==0,]
 # create coverage rate variable and filter Estimators
 
 results.df <- results.df %>%
-  group_by(Estimator,comparison,overlap.setting,gamma.setting,J) %>% 
+  group_by(Estimator,comparison,overlap.setting,gamma.setting,ncovars,J) %>% 
   mutate(CP = mean(Coverage)) 
 
 if(use.SL){
@@ -203,8 +203,8 @@ if(use.SL){
 n.estimators <- length(unique(results.df$Estimator))
 
 # reshape and plot
-results.df$id <- with(results.df, paste(overlap.setting, gamma.setting, J, sep = "_"))
-results_long <- reshape2::melt(results.df[!colnames(results.df) %in% c("J","id","filename")], id.vars=c("Estimator","comparison","overlap.setting","gamma.setting"))  # convert to long format
+results.df$id <- with(results.df, paste(overlap.setting, gamma.setting, ncovars, J, sep = "_"))
+results_long <- reshape2::melt(results.df[!colnames(results.df) %in% c("J","id","filename")], id.vars=c("Estimator","comparison","overlap.setting","gamma.setting","ncovars"))  # convert to long format
 
 variable_names3 <- list(
   'low'="Low event rate",
@@ -212,7 +212,9 @@ variable_names3 <- list(
   'zero'= "No treatment effect",
   'adequate'= "Adequate overlap",
   'inadequate'= "Inadequate overlap",
-  "rct"= "RCT") #  
+  "rct"= "RCT",
+  "40" = "40 covariates",
+  "100" = "100 covariates")  
 
 labeller3 <- function(variable,value){
   return(variable_names3[value])
@@ -248,185 +250,19 @@ if(estimand=="att"){
   xlabel <- TeX('$ATE_{j,j^*}$')
 }
 
-# bias 
-sim.results.bias <- ggplot(data=results_long[results_long$variable=="abs.bias",],
-                           aes(x=comparison, y=value, fill=forcats::fct_rev(Estimator)))  + geom_boxplot(outlier.alpha = 0.3,outlier.size = 1, outlier.stroke = 0.1, lwd=0.25) +
-  facet_grid(overlap.setting ~  gamma.setting, scales = "free", labeller=labeller3)  +  xlab(xlabel) + ylab("Absolute bias") +  #gtitle(paste0("Absolute bias (J=",J,", n=", n,")")) +
-  scale_fill_manual(values= estimator.color) +
-  #scale_fill_discrete(name = "") +
-  scale_x_discrete(labels=x.labels,
-                   limits = rev) +
-  theme(legend.position = "none",legend.margin=margin(1,5,5,5), legend.justification="center",
-        legend.box.margin=margin(0,0,0,0),legend.text=element_text(size=14), legend.key.width = unit(0.75, "cm"), legend.spacing.x = unit(0.75, 'cm'), legend.spacing.y = unit(0.75, 'cm')) +
-  theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
-  theme(axis.title=element_text(family="serif", size=16)) +
-  theme(axis.text.y=element_text(family="serif", size=16)) +
-  theme(axis.text.x=element_text(family="serif", size=14, angle = 0, vjust = 0.5, hjust=0.25)) +
-  theme(legend.text=element_text(family="serif", size=14)) +
-  theme(legend.title=element_text(family="serif", size=14)) +
-  theme(strip.text.x = element_text(family="serif", size=16)) +
-  theme(strip.text.y = element_text(family="serif", size=16)) +
-  theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l =0))) +
-  theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l =0))) +
-  theme(panel.spacing = unit(1, "lines")) 
-
-# Get the ggplot grob
-z.bias <- ggplotGrob(sim.results.bias)
-
-# Labels 
-labelR <- "Treatment setting" #TeX("$\\beta_j$ treatment model coefficients")
-labelT <- "Outcome setting" #TeX("$\\gamma_j$ outcome model coefficients")
-
-# Get the positions of the strips in the gtable: t = top, l = left, ...
-posR <- subset(z.bias$layout, grepl("strip-r", name), select = t:r)
-posT <- subset(z.bias$layout, grepl("strip-t", name), select = t:r)
-
-# Add a new column to the right of current right strips, 
-# and a new row on top of current top strips
-width <- z.bias$widths[max(posR$r)]    # width of current right strips
-height <- z.bias$heights[min(posT$t)]  # height of current top strips
-
-z.bias <- gtable_add_cols(z.bias, width, max(posR$r))  
-z.bias <- gtable_add_rows(z.bias, height, min(posT$t)-1)
-
-# Construct the new strip grobs
-stripR <- gTree(name = "Strip_right", children = gList(
-  rectGrob(gp = gpar(col = NA, fill = "grey85")),
-  textGrob(labelR, rot = -90, gp = gpar(fontsize=22, col = "grey10"))))
-
-stripT <- gTree(name = "Strip_top", children = gList(
-  rectGrob(gp = gpar(col = NA, fill = "grey85")),
-  textGrob(labelT, gp = gpar(fontsize=22, col = "grey10"))))
-
-# Position the grobs in the gtable
-z.bias <- gtable_add_grob(z.bias, stripR, t = min(posR$t)+1, l = max(posR$r) + 1, b = max(posR$b)+1, name = "strip-right")
-z.bias <- gtable_add_grob(z.bias, stripT, t = min(posT$t), l = min(posT$l), r = max(posT$r), name = "strip-top")
-
-# Add small gaps between strips
-z.bias <- gtable_add_cols(z.bias, unit(1/5, "line"), max(posR$r))
-z.bias <- gtable_add_rows(z.bias, unit(1/5, "line"), min(posT$t))
-
-# Draw it
-grid.newpage()
-grid.draw(z.bias)
-
-ggsave(paste0("sim_results/static_simulation_bias_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.bias,scale=1.75)
-
-# coverage
-sim.results.coverage <- ggplot(data=results_long[results_long$variable=="CP",],
-                               aes(x=comparison, y=value, colour=forcats::fct_rev(Estimator), group=forcats::fct_rev(Estimator)))  +   geom_line()  +
-  facet_grid(overlap.setting ~  gamma.setting, scales = "fixed", labeller=labeller3)  +  xlab(xlabel) + ylab("Coverage probability (%)") + #ggtitle(paste0("Coverage probability (J=",J,", n=", n,")")) + 
-  #scale_colour_discrete(name = "Estimator:") +
-  scale_fill_manual(values= estimator.color) +
-  scale_x_discrete(labels=x.labels,
-                   limits = rev) +
-  geom_hline(yintercept = 0.95, linetype="dotted")+
-  theme(legend.position = "none",legend.margin=margin(1,5,5,5), legend.justification="center",
-        legend.box.margin=margin(0,0,0,0),legend.text=element_text(size=14), legend.key.width = unit(0.75, "cm"),legend.spacing.x = unit(0.75, 'cm'), legend.spacing.y = unit(0.75, 'cm')) +   
-  theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
-  theme(axis.title=element_text(family="serif", size=16)) +
-  theme(axis.text.y=element_text(family="serif", size=16)) +
-  theme(axis.text.x=element_text(family="serif", size=14, angle = 0, vjust = 0.5, hjust=0.25)) +
-  theme(legend.text=element_text(family="serif", size=14)) +
-  theme(legend.title=element_text(family="serif", size=14)) +
-  theme(strip.text.x = element_text(family="serif", size=16)) +
-  theme(strip.text.y = element_text(family="serif", size=16)) +
-  theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l =0))) +
-  theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l =0))) +
-  theme(panel.spacing = unit(1, "lines"))
-
-# Get the ggplot grob
-z.coverage <- ggplotGrob(sim.results.coverage)
-
-# Get the positions of the strips in the gtable: t = top, l = left, ...
-posR <- subset(z.coverage$layout, grepl("strip-r", name), select = t:r)
-posT <- subset(z.coverage$layout, grepl("strip-t", name), select = t:r)
-
-# Add a new column to the right of current right strips, 
-# and a new row on top of current top strips
-width <- z.coverage$widths[max(posR$r)]    # width of current right strips
-height <- z.coverage$heights[min(posT$t)]  # height of current top strips
-
-z.coverage <- gtable_add_cols(z.coverage, width, max(posR$r))  
-z.coverage <- gtable_add_rows(z.coverage, height, min(posT$t)-1)
-
-# Position the grobs in the gtable
-z.coverage <- gtable_add_grob(z.coverage, stripR, t = min(posR$t)+1, l = max(posR$r) + 1, b = max(posR$b)+1, name = "strip-right")
-z.coverage <- gtable_add_grob(z.coverage, stripT, t = min(posT$t), l = min(posT$l), r = max(posT$r), name = "strip-top")
-
-# Add small gaps between strips
-z.coverage <- gtable_add_cols(z.coverage, unit(1/5, "line"), max(posR$r))
-z.coverage <- gtable_add_rows(z.coverage, unit(1/5, "line"), min(posT$t))
-
-# Draw it
-grid.newpage()
-grid.draw(z.coverage)
-
-ggsave(paste0("sim_results/static_simulation_coverage_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.coverage,scale=1.75)
-
-# CI width
-sim.results.CI.width <- ggplot(data=results_long[results_long$variable=="CIW",],
-                               aes(x=comparison, y=value, fill=forcats::fct_rev(Estimator)))  + geom_boxplot(outlier.alpha = 0.3,outlier.size = 1, outlier.stroke = 0.1, lwd=0.25) +
-  facet_grid(overlap.setting ~  gamma.setting, scales = "free", labeller=labeller3)  +  xlab(xlabel) + ylab("Confidence interval width") + 
-  #scale_fill_discrete(name = "") +
-  scale_fill_manual(values= estimator.color) +
-  scale_x_discrete(labels=x.labels,
-                   limits = rev) +
-  theme(legend.position = "none",legend.margin=margin(1,5,5,5), legend.justification="center",
-        legend.box.margin=margin(0,0,0,0),legend.text=element_text(size=14), legend.key.width = unit(0.75, "cm"),legend.spacing.x = unit(0.75, 'cm'), legend.spacing.y = unit(0.75, 'cm')) +  
-  theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
-  theme(axis.title=element_text(family="serif", size=16)) +
-  theme(axis.text.y=element_text(family="serif", size=16)) +
-  theme(axis.text.x=element_text(family="serif", size=14, angle = 0, vjust = 0.5, hjust=0.25)) +
-  theme(legend.text=element_text(family="serif", size=14)) +
-  theme(legend.title=element_text(family="serif", size=14)) +
-  theme(strip.text.x = element_text(family="serif", size=16)) +
-  theme(strip.text.y = element_text(family="serif", size=16)) +
-  theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l =0))) +
-  theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l =0))) +
-  theme(panel.spacing = unit(1, "lines"))
-
-# Get the ggplot grob
-z.CI.width <- ggplotGrob(sim.results.CI.width)
-
-# Get the positions of the strips in the gtable: t = top, l = left, ...
-posR <- subset(z.CI.width$layout, grepl("strip-r", name), select = t:r)
-posT <- subset(z.CI.width$layout, grepl("strip-t", name), select = t:r)
-
-# Add a new column to the right of current right strips, 
-# and a new row on top of current top strips
-width <- z.CI.width$widths[max(posR$r)]    # width of current right strips
-height <- z.CI.width$heights[min(posT$t)]  # height of current top strips
-
-z.CI.width <- gtable_add_cols(z.CI.width, width, max(posR$r))  
-z.CI.width <- gtable_add_rows(z.CI.width, height, min(posT$t)-1)
-
-# Position the grobs in the gtable
-z.CI.width <- gtable_add_grob(z.CI.width, stripR, t = min(posR$t)+1, l = max(posR$r) + 1, b = max(posR$b)+1, name = "strip-right")
-z.CI.width <- gtable_add_grob(z.CI.width, stripT, t = min(posT$t), l = min(posT$l), r = max(posT$r), name = "strip-top")
-
-# Add small gaps between strips
-z.CI.width <- gtable_add_cols(z.CI.width, unit(1/5, "line"), max(posR$r))
-z.CI.width <- gtable_add_rows(z.CI.width, unit(1/5, "line"), min(posT$t))
-
-# Draw it
-grid.newpage()
-grid.draw(z.CI.width)
-
-ggsave(paste0("sim_results/static_simulation_ci_width_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.CI.width,scale=1.75)
-
 ## coverage bar plot (avg. across comparisons)
 
 coverage.df <- data.frame(results.df) %>% 
-  select(c(Coverage,Estimator,overlap.setting,gamma.setting)) %>% 
-  group_by(Estimator,overlap.setting,gamma.setting) %>% 
+  select(c(Coverage,Estimator,overlap.setting,gamma.setting,ncovars)) %>% 
+  group_by(Estimator,overlap.setting,gamma.setting,ncovars) %>% 
   mutate(CP = mean(Coverage)) %>%
   dplyr::slice(n()) %>%
-  select(c(CP,Estimator,overlap.setting,gamma.setting))
+  select(c(CP,Estimator,overlap.setting,gamma.setting,ncovars))
 
-sim.results.cp.avg <- ggplot(data=coverage.df,
+# 100 covariates
+sim.results.cp.avg.100 <- ggplot(data=coverage.df[coverage.df$ncovars==100,],
                              aes(x=Estimator, y=CP, fill=forcats::fct_rev(Estimator)))  + geom_col() +
-  facet_grid(overlap.setting ~  gamma.setting, scales = "fixed", labeller=labeller3)   + ylab("Average coverage probability over all pairwise comparisons") + 
+  facet_grid(overlap.setting ~ gamma.setting, scales = "fixed", labeller=labeller3)   + ylab("Average coverage probability over all pairwise comparisons") + 
   #scale_fill_discrete(name = "") +
   scale_fill_manual(values= estimator.color) +
   scale_x_discrete(labels=NULL, limits = rev) +
@@ -448,7 +284,20 @@ sim.results.cp.avg <- ggplot(data=coverage.df,
         axis.ticks.x = element_blank())
 
 # Get the ggplot grob
-z.cp.avg <- ggplotGrob(sim.results.cp.avg)
+z.cp.avg <- ggplotGrob(sim.results.cp.avg.100)
+
+# Labels 
+labelR <- "Treatment setting" #TeX("$\\beta_j$ treatment model coefficients")
+labelT <- "Outcome setting" #TeX("$\\gamma_j$ outcome model coefficients")
+
+# Construct the new strip grobs
+stripR <- gTree(name = "Strip_right", children = gList(
+  rectGrob(gp = gpar(col = NA, fill = "grey85")),
+  textGrob(labelR, rot = -90, gp = gpar(fontsize=22, col = "grey10"))))
+
+stripT <- gTree(name = "Strip_top", children = gList(
+  rectGrob(gp = gpar(col = NA, fill = "grey85")),
+  textGrob(labelT, gp = gpar(fontsize=22, col = "grey10"))))
 
 # Get the positions of the strips in the gtable: t = top, l = left, ...
 posR <- subset(z.cp.avg$layout, grepl("strip-r", name), select = t:r)
@@ -475,21 +324,92 @@ grid.newpage()
 grid.draw(z.cp.avg)
 
 if(use.SL){
-  ggsave(paste0("sim_results/static_simulation_cp_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.cp.avg,scale=1.75)
+  ggsave(paste0("sim_results/static_simulation_cp_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_FALSE","_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.cp.avg,scale=1.75)
 }else{
-  ggsave(paste0("sim_results/static_simulation_cp_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.cp.avg,scale=2)
+  ggsave(paste0("sim_results/static_simulation_cp_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_FALSE","_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.cp.avg,scale=2)
+}
+
+# 40 covariates
+sim.results.cp.avg.40 <- ggplot(data=coverage.df[coverage.df$ncovars==40,],
+                                 aes(x=Estimator, y=CP, fill=forcats::fct_rev(Estimator)))  + geom_col() +
+  facet_grid(overlap.setting ~ gamma.setting, scales = "fixed", labeller=labeller3)   + ylab("Average coverage probability over all pairwise comparisons") + 
+  #scale_fill_discrete(name = "") +
+  scale_fill_manual(values= estimator.color) +
+  scale_x_discrete(labels=NULL, limits = rev) +
+  geom_hline(yintercept = 0.95, linetype="dotted")+
+  theme(legend.position = "none",legend.margin=margin(1,5,5,5), legend.justification="center",
+        legend.box.margin=margin(0,0,0,0),legend.text=element_text(size=14), legend.key.width = unit(0.75, "cm"),legend.spacing.x = unit(0.75, 'cm'), legend.spacing.y = unit(0.75, 'cm')) +  
+  theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
+  theme(axis.title=element_text(family="serif", size=16)) +
+  theme(axis.text.y=element_text(family="serif", size=16)) +
+  theme(axis.text.x=element_text(family="serif", size=14, angle = 0, vjust = 0.5, hjust=0.25)) +
+  theme(legend.text=element_text(family="serif", size=14)) +
+  theme(legend.title=element_text(family="serif", size=14)) +
+  theme(strip.text.x = element_text(family="serif", size=16)) +
+  theme(strip.text.y = element_text(family="serif", size=16)) +
+  theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l =0))) +
+  theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l =0))) +
+  theme(panel.spacing = unit(1, "lines")) +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
+
+# Get the ggplot grob
+z.cp.avg <- ggplotGrob(sim.results.cp.avg.40)
+
+# Labels 
+labelR <- "Treatment setting" #TeX("$\\beta_j$ treatment model coefficients")
+labelT <- "Outcome setting" #TeX("$\\gamma_j$ outcome model coefficients")
+
+# Construct the new strip grobs
+stripR <- gTree(name = "Strip_right", children = gList(
+  rectGrob(gp = gpar(col = NA, fill = "grey85")),
+  textGrob(labelR, rot = -90, gp = gpar(fontsize=22, col = "grey10"))))
+
+stripT <- gTree(name = "Strip_top", children = gList(
+  rectGrob(gp = gpar(col = NA, fill = "grey85")),
+  textGrob(labelT, gp = gpar(fontsize=22, col = "grey10"))))
+
+# Get the positions of the strips in the gtable: t = top, l = left, ...
+posR <- subset(z.cp.avg$layout, grepl("strip-r", name), select = t:r)
+posT <- subset(z.cp.avg$layout, grepl("strip-t", name), select = t:r)
+
+# Add a new column to the right of current right strips, 
+# and a new row on top of current top strips
+width <- z.cp.avg$widths[max(posR$r)]    # width of current right strips
+height <- z.cp.avg$heights[min(posT$t)]  # height of current top strips
+
+z.cp.avg <- gtable_add_cols(z.cp.avg, width, max(posR$r))  
+z.cp.avg <- gtable_add_rows(z.cp.avg, height, min(posT$t)-1)
+
+# Position the grobs in the gtable
+z.cp.avg <- gtable_add_grob(z.cp.avg, stripR, t = min(posR$t)+1, l = max(posR$r) + 1, b = max(posR$b)+1, name = "strip-right")
+z.cp.avg <- gtable_add_grob(z.cp.avg, stripT, t = min(posT$t), l = min(posT$l), r = max(posT$r), name = "strip-top")
+
+# Add small gaps between strips
+z.cp.avg <- gtable_add_cols(z.cp.avg, unit(1/5, "line"), max(posR$r))
+z.cp.avg <- gtable_add_rows(z.cp.avg, unit(1/5, "line"), min(posT$t))
+
+# Draw it
+grid.newpage()
+grid.draw(z.cp.avg)
+
+if(use.SL){
+  ggsave(paste0("sim_results/static_simulation_cp_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_FALSE","_R_",results[[1]][[1]]$R,".png"),plot = z.cp.avg,scale=1.75)
+}else{
+  ggsave(paste0("sim_results/static_simulation_cp_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_FALSE","_R_",results[[1]][[1]]$R,".png"),plot = z.cp.avg,scale=2)
 }
 
 ## bias bar plot (avg. across comparisons)
 
 bias.df <- data.frame(results.df) %>% 
-  select(c(abs.bias,Estimator,overlap.setting,gamma.setting)) %>% 
-  group_by(Estimator,overlap.setting,gamma.setting) %>% 
+  select(c(abs.bias,Estimator,overlap.setting,gamma.setting,ncovars)) %>% 
+  group_by(Estimator,overlap.setting,gamma.setting,ncovars) %>% 
   mutate(bias = mean(abs.bias)) %>%
   dplyr::slice(n()) %>%
-  select(c(bias,Estimator,overlap.setting,gamma.setting))
+  select(c(bias,Estimator,overlap.setting,gamma.setting,ncovars))
 
-sim.results.bias.avg <- ggplot(data=bias.df,
+# 40 covars
+sim.results.bias.avg.40 <- ggplot(data=bias.df[bias.df$ncovars==40,],
                                aes(x=Estimator, y=bias, fill=forcats::fct_rev(Estimator)))  + geom_col() +
   facet_grid(overlap.setting ~  gamma.setting, scales = "free", labeller=labeller3)   + ylab("Average bias over all pairwise comparisons") +  
   #scale_fill_discrete(name = "") +
@@ -512,7 +432,7 @@ sim.results.bias.avg <- ggplot(data=bias.df,
         axis.ticks.x = element_blank())
 
 # Get the ggplot grob
-z.bias.avg <- ggplotGrob(sim.results.bias.avg)
+z.bias.avg <- ggplotGrob(sim.results.bias.avg.40)
 
 # Get the positions of the strips in the gtable: t = top, l = left, ...
 posR <- subset(z.bias.avg$layout, grepl("strip-r", name), select = t:r)
@@ -539,21 +459,78 @@ grid.newpage()
 grid.draw(z.bias.avg)
 
 if(use.SL){
-  ggsave(paste0("sim_results/static_simulation_bias_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.bias.avg,scale=1.75)
+  ggsave(paste0("sim_results/static_simulation_bias_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_FALSE","_R_",results[[1]][[1]]$R,".png"),plot = z.bias.avg,scale=1.75)
 }else{
-  ggsave(paste0("sim_results/static_simulation_bias_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.bias.avg,scale=2)
+  ggsave(paste0("sim_results/static_simulation_bias_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_FALSE","_R_",results[[1]][[1]]$R,".png"),plot = z.bias.avg,scale=2)
+}
+
+# 100 covars
+sim.results.bias.avg.100 <- ggplot(data=bias.df[bias.df$ncovars==100,],
+                                  aes(x=Estimator, y=bias, fill=forcats::fct_rev(Estimator)))  + geom_col() +
+  facet_grid(overlap.setting ~  gamma.setting, scales = "free", labeller=labeller3)   + ylab("Average bias over all pairwise comparisons") +  
+  #scale_fill_discrete(name = "") +
+  scale_fill_manual(values= estimator.color) +
+  scale_x_discrete(labels=NULL, limits = rev) +
+  theme(legend.position = "none",legend.margin=margin(1,5,5,5), legend.justification="center",
+        legend.box.margin=margin(0,0,0,0),legend.text=element_text(size=14), legend.key.width = unit(0.75, "cm"),legend.spacing.x = unit(0.75, 'cm'), legend.spacing.y = unit(0.75, 'cm')) +  
+  theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
+  theme(axis.title=element_text(family="serif", size=16)) +
+  theme(axis.text.y=element_text(family="serif", size=16)) +
+  theme(axis.text.x=element_text(family="serif", size=14, angle = 0, vjust = 0.5, hjust=0.25)) +
+  theme(legend.text=element_text(family="serif", size=14)) +
+  theme(legend.title=element_text(family="serif", size=14)) +
+  theme(strip.text.x = element_text(family="serif", size=16)) +
+  theme(strip.text.y = element_text(family="serif", size=16)) +
+  theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l =0))) +
+  theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l =0))) +
+  theme(panel.spacing = unit(1, "lines")) +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
+
+# Get the ggplot grob
+z.bias.avg <- ggplotGrob(sim.results.bias.avg.100)
+
+# Get the positions of the strips in the gtable: t = top, l = left, ...
+posR <- subset(z.bias.avg$layout, grepl("strip-r", name), select = t:r)
+posT <- subset(z.bias.avg$layout, grepl("strip-t", name), select = t:r)
+
+# Add a new column to the right of current right strips, 
+# and a new row on top of current top strips
+width <- z.bias.avg$widths[max(posR$r)]    # width of current right strips
+height <- z.bias.avg$heights[min(posT$t)]  # height of current top strips
+
+z.bias.avg <- gtable_add_cols(z.bias.avg, width, max(posR$r))  
+z.bias.avg <- gtable_add_rows(z.bias.avg, height, min(posT$t)-1)
+
+# Position the grobs in the gtable
+z.bias.avg <- gtable_add_grob(z.bias.avg, stripR, t = min(posR$t)+1, l = max(posR$r) + 1, b = max(posR$b)+1, name = "strip-right")
+z.bias.avg <- gtable_add_grob(z.bias.avg, stripT, t = min(posT$t), l = min(posT$l), r = max(posT$r), name = "strip-top")
+
+# Add small gaps between strips
+z.bias.avg <- gtable_add_cols(z.bias.avg, unit(1/5, "line"), max(posR$r))
+z.bias.avg <- gtable_add_rows(z.bias.avg, unit(1/5, "line"), min(posT$t))
+
+# Draw it
+grid.newpage()
+grid.draw(z.bias.avg)
+
+if(use.SL){
+  ggsave(paste0("sim_results/static_simulation_bias_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_FALSE","_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.bias.avg,scale=1.75)
+}else{
+  ggsave(paste0("sim_results/static_simulation_bias_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_", use.SL, "_covars_40_FALSE","_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.bias.avg,scale=2)
 }
 
 ## CIW bar plot (avg. across comparisons)
 
 CIW.df <- data.frame(results.df) %>% 
-  select(c(CIW,Estimator,overlap.setting,gamma.setting)) %>% 
-  group_by(Estimator,overlap.setting,gamma.setting) %>% 
+  select(c(CIW,Estimator,overlap.setting,gamma.setting,ncovars)) %>% 
+  group_by(Estimator,overlap.setting,gamma.setting,ncovars) %>% 
   mutate(CIW = mean(CIW)) %>%
   dplyr::slice(n()) %>%
-  select(c(CIW,Estimator,overlap.setting,gamma.setting))
+  select(c(CIW,Estimator,overlap.setting,gamma.setting,ncovars))
 
-sim.results.CIW.avg <- ggplot(data=CIW.df,
+# 40 covars
+sim.results.CIW.avg.40 <- ggplot(data=CIW.df[CIW.df$ncovars==40,],
                               aes(x=Estimator, y=CIW, fill=forcats::fct_rev(Estimator)))  + geom_col() +
   facet_grid(overlap.setting ~  gamma.setting, scales = "free", labeller=labeller3)   + ylab("Average confidence interval width over all pairwise comparisons") +  
   #scale_fill_discrete(name = "") +
@@ -576,7 +553,7 @@ sim.results.CIW.avg <- ggplot(data=CIW.df,
         axis.ticks.x = element_blank())
 
 # Get the ggplot grob
-z.CIW.avg <- ggplotGrob(sim.results.CIW.avg)
+z.CIW.avg <- ggplotGrob(sim.results.CIW.avg.40)
 
 # Get the positions of the strips in the gtable: t = top, l = left, ...
 posR <- subset(z.CIW.avg$layout, grepl("strip-r", name), select = t:r)
@@ -603,9 +580,66 @@ grid.newpage()
 grid.draw(z.CIW.avg)
 
 if(use.SL){
-  ggsave(paste0("sim_results/static_simulation_CIW_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.CIW.avg,scale=1.75)
+  ggsave(paste0("sim_results/static_simulation_CIW_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_FALSE_","_R_",results[[1]][[1]]$R,".png"),plot = z.CIW.avg,scale=1.75)
 }else{
-  ggsave(paste0("sim_results/static_simulation_CIW_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.CIW.avg,scale=2)
+  ggsave(paste0("sim_results/static_simulation_CIW_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_FALSE_","_R_",results[[1]][[1]]$R,".png"),plot = z.CIW.avg,scale=2)
+}
+
+
+#100 covars
+sim.results.CIW.avg.100 <- ggplot(data=CIW.df[CIW.df$ncovars==100,],
+                                 aes(x=Estimator, y=CIW, fill=forcats::fct_rev(Estimator)))  + geom_col() +
+  facet_grid(overlap.setting ~  gamma.setting, scales = "free", labeller=labeller3)   + ylab("Average confidence interval width over all pairwise comparisons") +  
+  #scale_fill_discrete(name = "") +
+  scale_fill_manual(values= estimator.color) +
+  scale_x_discrete(labels=NULL, limits = rev) +
+  theme(legend.position = "none",legend.margin=margin(1,5,5,5), legend.justification="center",
+        legend.box.margin=margin(0,0,0,0),legend.text=element_text(size=14), legend.key.width = unit(0.75, "cm"),legend.spacing.x = unit(0.75, 'cm'), legend.spacing.y = unit(0.75, 'cm')) +  
+  theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
+  theme(axis.title=element_text(family="serif", size=16)) +
+  theme(axis.text.y=element_text(family="serif", size=16)) +
+  theme(axis.text.x=element_text(family="serif", size=14, angle = 0, vjust = 0.5, hjust=0.25)) +
+  theme(legend.text=element_text(family="serif", size=14)) +
+  theme(legend.title=element_text(family="serif", size=14)) +
+  theme(strip.text.x = element_text(family="serif", size=16)) +
+  theme(strip.text.y = element_text(family="serif", size=16)) +
+  theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l =0))) +
+  theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l =0))) +
+  theme(panel.spacing = unit(1, "lines")) +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
+
+# Get the ggplot grob
+z.CIW.avg <- ggplotGrob(sim.results.CIW.avg.100)
+
+# Get the positions of the strips in the gtable: t = top, l = left, ...
+posR <- subset(z.CIW.avg$layout, grepl("strip-r", name), select = t:r)
+posT <- subset(z.CIW.avg$layout, grepl("strip-t", name), select = t:r)
+
+# Add a new column to the right of current right strips, 
+# and a new row on top of current top strips
+width <- z.CIW.avg$widths[max(posR$r)]    # width of current right strips
+height <- z.CIW.avg$heights[min(posT$t)]  # height of current top strips
+
+z.CIW.avg <- gtable_add_cols(z.CIW.avg, width, max(posR$r))  
+z.CIW.avg <- gtable_add_rows(z.CIW.avg, height, min(posT$t)-1)
+
+# Position the grobs in the gtable
+z.CIW.avg <- gtable_add_grob(z.CIW.avg, stripR, t = min(posR$t)+1, l = max(posR$r) + 1, b = max(posR$b)+1, name = "strip-right")
+z.CIW.avg <- gtable_add_grob(z.CIW.avg, stripT, t = min(posT$t), l = min(posT$l), r = max(posT$r), name = "strip-top")
+
+# Add small gaps between strips
+z.CIW.avg <- gtable_add_cols(z.CIW.avg, unit(1/5, "line"), max(posR$r))
+z.CIW.avg <- gtable_add_rows(z.CIW.avg, unit(1/5, "line"), min(posT$t))
+
+# Draw it
+grid.newpage()
+grid.draw(z.CIW.avg)
+
+if(use.SL){
+  ggsave(paste0("sim_results/static_simulation_CIW_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_FALSE","_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.CIW.avg,scale=1.75)
+}else{
+  ggsave(paste0("sim_results/static_simulation_CIW_avg_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_FALSE","_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.CIW.avg,scale=2)
 }
 
 if(use.SL){
@@ -632,7 +666,9 @@ if(use.SL){
   
   ## plot estimated and observed Ys and As, initial estimates, and ESS (GLM + SL)
   
-  filenames <- c(list.files(path=output.path, pattern = ".rds", full.names = TRUE)) # Use GLM + SL
+  filenames <- c(list.files(path=output.path, pattern = ".rds", full.names = TRUE), 
+                 list.files(path=output.path2, pattern = ".rds", full.names = TRUE), 
+                 list.files(path=output.path3, pattern = ".rds", full.names = TRUE))
   
   filenames <- filenames[grep(paste0("J_",J),filenames)]
   filenames <- filenames[grep(paste0("n_",n,"_"),filenames)]
@@ -647,7 +683,7 @@ if(use.SL){
     print(f)
     result.AY.matrix <- readRDS(f)
     R <- ncol(result.AY.matrix )
-    
+    ncovars <- ifelse(grep("covars_40_TRUE",f), 40, ifelse(grep("covars_100_TRUE",f), 100, 6))
     if(isTRUE(grep("use_SL_FALSE",f)==1)){
       estimator <- estimators[grep("glm", estimators)]
       rownames(result.AY.matrix)[grep("tmle",rownames(result.AY.matrix))] <- gsub("tmle","tmle_glm", rownames(result.AY.matrix)[grep("tmle",rownames(result.AY.matrix))])
@@ -721,6 +757,10 @@ if(use.SL){
                               "Obs.Y"=c(unlist(obs_outcome)),
                               "filename"=rep(setdiff(filenames,filenames[grep("use_SL_FALSE",filenames)]), each=J*R)) # 54000
   
+  results.AY.df$ncovars <- "6"
+  results.AY.df$ncovars[grep("covars_40_TRUE",results.AY.df$filename)] <- "40" 
+  results.AY.df$ncovars[grep("covars_100_TRUE",results.AY.df$filename)] <- "100" 
+  
   results.AY.preds.df <- data.frame("Y.initial"=c(unlist(yinitial_tmle),unlist(yinitial_tmle_bin),unlist(yinitial_tmle_glm),unlist(yinitial_tmle_glm_bin)),
                                     "Y.initial.diff"=c(abs(unlist(yinitial_tmle)-unlist(obs_outcome)),abs(unlist(yinitial_tmle_bin)-unlist(obs_outcome)),abs(unlist(yinitial_tmle_glm)-unlist(obs_outcome)),abs(unlist(yinitial_tmle_glm_bin)-unlist(obs_outcome))),
                                     "A.mean"= c(unlist(Ahat_tmle),unlist(Ahat_tmle_bin),unlist(Ahat_tmle_glm),unlist(Ahat_tmle_glm_bin)),
@@ -728,7 +768,11 @@ if(use.SL){
                                     "ESS"= c(unlist(ess_tmle),unlist(ess_tmle_bin),unlist(ess_tmle_glm),unlist(ess_tmle_glm_bin)),
                                     "ESS_ratio"= c(unlist(ess_tmle)/unlist(obs_treatment_n),unlist(ess_tmle_bin)/unlist(obs_treatment_n),unlist(ess_tmle_glm)/unlist(obs_treatment_n),unlist(ess_tmle_glm_bin)/unlist(obs_treatment_n)),
                                     "Estimator"=c(rep("Multinomial (SL)",length.out=length(unlist(Ahat_tmle))), rep("Binomial (SL)",length.out=length(unlist(Ahat_tmle_bin))), rep("Multinomial (GLM)",length.out=length(unlist(Ahat_tmle_glm))), rep("Binomial (GLM)",length.out=length(unlist(Ahat_tmle_glm_bin)))),
-                                    filename=c(unlist(sapply(1:length(setdiff(filenames,filenames[grep("use_SL_FALSE",filenames)])), function(i) rep(setdiff(filenames,filenames[grep("use_SL_FALSE",filenames)])[i], length.out=1000*J))))) # (1000*9*6) *5 = (54000)*5 = 270000
+                                    filename=c(unlist(sapply(1:length(setdiff(filenames,filenames[grep("use_SL_FALSE",filenames)])), function(i) rep(setdiff(filenames,filenames[grep("use_SL_FALSE",filenames)])[i], length.out=R*J))))) # (100*9*6) *5 = (54000)*5 = 22800
+  
+  results.AY.preds.df$ncovars <- "6"
+  results.AY.preds.df$ncovars[grep("covars_40_TRUE",results.AY.preds.df$filename)] <- "40" 
+  results.AY.preds.df$ncovars[grep("covars_100_TRUE",results.AY.preds.df$filename)] <- "100" 
   
   results.AY.df$J <- ifelse(J==3,3,6)
   results.AY.preds.df$J <- ifelse(J==3,3,6)
@@ -755,11 +799,11 @@ if(use.SL){
   }
   
   # reshape and plot
-  results.AY.df$id <- with(results.AY.df, paste(overlap.setting, gamma.setting, J, sep = "_"))
-  results_AY_long <- reshape2::melt(results.AY.df[!colnames(results.AY.df) %in% c("J","id","filename")], id.vars=c("Treatment","overlap.setting","gamma.setting"))  # convert to long format
+  results.AY.df$id <- with(results.AY.df, paste(overlap.setting, gamma.setting,ncovars, J, sep = "_"))
+  results_AY_long <- reshape2::melt(results.AY.df[!colnames(results.AY.df) %in% c("J","id","filename")], id.vars=c("Treatment","overlap.setting","gamma.setting","ncovars"))  # convert to long format
   
-  results.AY.preds.df$id <- with(results.AY.preds.df, paste(overlap.setting, gamma.setting, J, sep = "_"))
-  results_AY_preds_long <- reshape2::melt(results.AY.preds.df[!colnames(results.AY.preds.df) %in% c("J","id","filename")], id.vars=c("Treatment","Estimator","overlap.setting","gamma.setting"))  # convert to long format
+  results.AY.preds.df$id <- with(results.AY.preds.df, paste(overlap.setting, gamma.setting, ncovars, J, sep = "_"))
+  results_AY_preds_long <- reshape2::melt(results.AY.preds.df[!colnames(results.AY.preds.df) %in% c("J","id","filename")], id.vars=c("Treatment","Estimator","overlap.setting","gamma.setting","ncovars"))  # convert to long format
   
   if(J==6){
     x.labels.AY <- c('1'=parse(text = TeX(paste0('$1$'))),
@@ -774,8 +818,8 @@ if(use.SL){
                      '3'=parse(text = TeX(paste0('$3$'))))
   }
   
-  # Observed treatment probabilities 
-  sim.results.A <- ggplot(data=results_AY_long[results_AY_long$variable=="Obs.A",],
+  # Observed treatment probabilities (40 covariates)
+  sim.results.A.40 <- ggplot(data=results_AY_long[results_AY_long$variable=="Obs.A" & results_AY_long$ncovars==40,],
                           aes(x=factor(Treatment), y=value,fill=forcats::fct_rev(variable)))  + geom_boxplot(outlier.alpha = 0.3,outlier.size = 1, outlier.stroke = 0.1, lwd=0.25) +
     facet_grid(overlap.setting ~ ., scales = "fixed", labeller=labeller3)  +  xlab("Treatment level (j)") + ylab("Simulated treatment probability") + #ggtitle(paste0("Observed treatment probabilities (J=",J,", n=", n,")")) +
     scale_fill_manual(name = "Variable:", values = c("orange")) + 
@@ -796,7 +840,7 @@ if(use.SL){
     theme(panel.spacing = unit(1, "lines"))
   
   # Get the ggplot grob
-  z.A <- ggplotGrob(sim.results.A)
+  z.A <- ggplotGrob(sim.results.A.40)
   
   # Get the positions of the strips in the gtable: t = top, l = left, ...
   posR <- subset(z.A$layout, grepl("strip-r", name), select = t:r)
@@ -817,10 +861,55 @@ if(use.SL){
   grid.newpage()
   grid.draw(z.A)
   
-  ggsave(paste0("sim_results/static_simulation_obs_A_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.A,scale=1.75)
+  ggsave(paste0("sim_results/static_simulation_obs_A_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_FALSE","_R_",results[[1]][[1]]$R,".png"),plot = z.A,scale=1.75)
   
-  # observed outcomes
-  sim.results.Y <- ggplot(data=results_AY_long[results_AY_long$variable=="Obs.Y",],
+  # Observed treatment probabilities (100 covariates)
+  sim.results.A.100 <- ggplot(data=results_AY_long[results_AY_long$variable=="Obs.A" & results_AY_long$ncovars==100,],
+                             aes(x=factor(Treatment), y=value,fill=forcats::fct_rev(variable)))  + geom_boxplot(outlier.alpha = 0.3,outlier.size = 1, outlier.stroke = 0.1, lwd=0.25) +
+    facet_grid(overlap.setting ~ ., scales = "fixed", labeller=labeller3)  +  xlab("Treatment level (j)") + ylab("Simulated treatment probability") + #ggtitle(paste0("Observed treatment probabilities (J=",J,", n=", n,")")) +
+    scale_fill_manual(name = "Variable:", values = c("orange")) + 
+    scale_x_discrete(labels=x.labels.AY,
+                     limits = rev) +
+    theme(legend.position = "none",legend.margin=margin(1,5,5,5), legend.justification="center",
+          legend.box.margin=margin(0,0,0,0),legend.text=element_text(size=14), legend.key.width = unit(0.75, "cm"),legend.spacing.x = unit(0.75, 'cm'), legend.spacing.y = unit(0.75, 'cm')) +   
+    theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
+    theme(axis.title=element_text(family="serif", size=16)) +
+    theme(axis.text.y=element_text(family="serif", size=16)) +
+    theme(axis.text.x=element_text(family="serif", size=16)) +
+    theme(legend.text=element_text(family="serif", size=14)) +
+    theme(legend.title=element_text(family="serif", size=14)) +
+    theme(strip.text.x = element_text(family="serif", size=16)) +
+    theme(strip.text.y = element_text(family="serif", size=16)) +
+    theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l =0))) +
+    theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l =0))) +
+    theme(panel.spacing = unit(1, "lines"))
+  
+  # Get the ggplot grob
+  z.A <- ggplotGrob(sim.results.A.100)
+  
+  # Get the positions of the strips in the gtable: t = top, l = left, ...
+  posR <- subset(z.A$layout, grepl("strip-r", name), select = t:r)
+  
+  # Add a new column to the right of current right strips, 
+  # and a new row on top of current top strips
+  width <- z.A$widths[max(posR$r)]    # width of current right strips
+  
+  z.A <- gtable_add_cols(z.A, width, max(posR$r))  
+  
+  # Position the grobs in the gtable
+  z.A <- gtable_add_grob(z.A, stripR, t = min(posR$t), l = max(posR$r) + 1, b = max(posR$b), name = "strip-right")
+  
+  # Add small gaps between strips
+  z.A <- gtable_add_cols(z.A, unit(1/5, "line"), max(posR$r))
+  
+  # Draw it
+  grid.newpage()
+  grid.draw(z.A)
+  
+  ggsave(paste0("sim_results/static_simulation_obs_A_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_FALSE","_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.A,scale=1.75)
+  
+  # observed outcomes (40 covariates)
+  sim.results.Y.40 <- ggplot(data=results_AY_long[results_AY_long$variable=="Obs.Y" & results_AY_long$ncovars==40,],
                           aes(x=factor(Treatment), y=value,fill=forcats::fct_rev(variable)))  + geom_boxplot(outlier.alpha = 0.3,outlier.size = 1, outlier.stroke = 0.1, lwd=0.25) +
     facet_grid(overlap.setting ~  gamma.setting, scales = "fixed", labeller=labeller3)  +  xlab("Treatment level (j)") + ylab("Simulated outcome under each treatment level") + #ggtitle(paste0("Observed outcomes under each treatment level (J=",J,", n=", n,")")) +
     scale_fill_manual(name = "Variable:", values = c("orange")) + 
@@ -841,7 +930,7 @@ if(use.SL){
     theme(panel.spacing = unit(1, "lines"))
   
   # Get the ggplot grob
-  z.Y <- ggplotGrob(sim.results.Y)
+  z.Y <- ggplotGrob(sim.results.Y.40)
   
   # Get the positions of the strips in the gtable: t = top, l = left, ...
   posT <- subset(z.Y$layout, grepl("strip-t", name), select = t:r)
@@ -867,10 +956,60 @@ if(use.SL){
   grid.newpage()
   grid.draw(z.Y)
   
-  ggsave(paste0("sim_results/static_simulation_Y_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.Y,scale=1.75)
+  ggsave(paste0("sim_results/static_simulation_Y_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_FALSE","_R_",results[[1]][[1]]$R,".png"),plot = z.Y,scale=1.75)
   
-  # treatment estimates
-  sim.results.A.mean <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="A.mean",],  
+  # observed outcomes (100 covariates)
+  sim.results.Y.100 <- ggplot(data=results_AY_long[results_AY_long$variable=="Obs.Y" & results_AY_long$ncovars==100,],
+                             aes(x=factor(Treatment), y=value,fill=forcats::fct_rev(variable)))  + geom_boxplot(outlier.alpha = 0.3,outlier.size = 1, outlier.stroke = 0.1, lwd=0.25) +
+    facet_grid(overlap.setting ~  gamma.setting, scales = "fixed", labeller=labeller3)  +  xlab("Treatment level (j)") + ylab("Simulated outcome under each treatment level") + #ggtitle(paste0("Observed outcomes under each treatment level (J=",J,", n=", n,")")) +
+    scale_fill_manual(name = "Variable:", values = c("orange")) + 
+    scale_x_discrete(labels=x.labels.AY,
+                     limits = rev) +
+    theme(legend.position = "none",legend.margin=margin(1,5,5,5), legend.justification="center",
+          legend.box.margin=margin(0,0,0,0),legend.text=element_text(size=14), legend.key.width = unit(0.75, "cm"),legend.spacing.x = unit(0.75, 'cm'), legend.spacing.y = unit(0.75, 'cm')) +  
+    theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
+    theme(axis.title=element_text(family="serif", size=16)) +
+    theme(axis.text.y=element_text(family="serif", size=16)) +
+    theme(axis.text.x=element_text(family="serif", size=16)) +
+    theme(legend.text=element_text(family="serif", size=14)) +
+    theme(legend.title=element_text(family="serif", size=14)) +
+    theme(strip.text.x = element_text(family="serif", size=16)) +
+    theme(strip.text.y = element_text(family="serif", size=16)) +
+    theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l =0))) +
+    theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l =0))) +
+    theme(panel.spacing = unit(1, "lines"))
+  
+  # Get the ggplot grob
+  z.Y <- ggplotGrob(sim.results.Y.100)
+  
+  # Get the positions of the strips in the gtable: t = top, l = left, ...
+  posT <- subset(z.Y$layout, grepl("strip-t", name), select = t:r)
+  posR <- subset(z.Y$layout, grepl("strip-r", name), select = t:r)
+  
+  # Add a new column to the right of current right strips, 
+  # and a new row on top of current top strips
+  height <- z.Y$heights[min(posT$t)]  # height of current top strips
+  width <- z.Y$widths[max(posR$r)]    # width of current right strips
+  
+  z.Y <- gtable_add_cols(z.Y, width, max(posR$r))  
+  z.Y <- gtable_add_rows(z.Y, height, min(posT$t)-1)
+  
+  # Position the grobs in the gtable
+  z.Y <- gtable_add_grob(z.Y, stripR, t = min(posR$t)+1, l = max(posR$r) + 1, b = max(posR$b)+1, name = "strip-right")
+  z.Y <- gtable_add_grob(z.Y, stripT, t = min(posT$t), l = min(posT$l), r = max(posT$r), name = "strip-top")
+  
+  # Add small gaps between strips
+  z.Y <- gtable_add_cols(z.Y, unit(1/5, "line"), max(posR$r))
+  z.Y <- gtable_add_rows(z.Y, unit(1/5, "line"), min(posT$t))
+  
+  # Draw it
+  grid.newpage()
+  grid.draw(z.Y)
+  
+  ggsave(paste0("sim_results/static_simulation_Y_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_FALSE","_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.Y,scale=1.75)
+  
+  # treatment estimates (40 covariates)
+  sim.results.A.mean.40 <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="A.mean" & results_AY_preds_long$ncovars==40,],  
                                aes(x=factor(Treatment), y=value,fill=forcats::fct_rev(Estimator)))  + geom_boxplot(outlier.alpha = 0.3,outlier.size = 1, outlier.stroke = 0.1, lwd=0.25) +
     facet_grid(overlap.setting ~ ., scales = "fixed", labeller=labeller3)  +  xlab("Treatment level (j)") + ylab("Estimated treatment probability") + #ggtitle(paste0("Estimated treatment probabilities (J=",J,", n=", n,")")) +
     #scale_fill_discrete(name = "Treatment model: ") +
@@ -892,7 +1031,7 @@ if(use.SL){
     theme(panel.spacing = unit(1, "lines"))
   
   # Get the ggplot grob
-  z.A.mean <- ggplotGrob(sim.results.A.mean)
+  z.A.mean <- ggplotGrob(sim.results.A.mean.40)
   
   # Get the positions of the strips in the gtable: t = top, l = left, ...
   posR <- subset(z.A.mean$layout, grepl("strip-r", name), select = t:r)
@@ -913,10 +1052,56 @@ if(use.SL){
   grid.newpage()
   grid.draw(z.A.mean)
   
-  ggsave(paste0("sim_results/static_simulation_est_A_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.A.mean,scale=1.75)
+  ggsave(paste0("sim_results/static_simulation_est_A_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_FALSE","_R_",results[[1]][[1]]$R,".png"),plot = z.A.mean,scale=1.75)
   
-  # treatment estimates -diff
-  sim.results.A.mean.diff <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="A.mean.diff",],  
+  # treatment estimates (100 covariates)
+  sim.results.A.mean.100 <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="A.mean" & results_AY_preds_long$ncovars==100,],  
+                                  aes(x=factor(Treatment), y=value,fill=forcats::fct_rev(Estimator)))  + geom_boxplot(outlier.alpha = 0.3,outlier.size = 1, outlier.stroke = 0.1, lwd=0.25) +
+    facet_grid(overlap.setting ~ ., scales = "fixed", labeller=labeller3)  +  xlab("Treatment level (j)") + ylab("Estimated treatment probability") + #ggtitle(paste0("Estimated treatment probabilities (J=",J,", n=", n,")")) +
+    #scale_fill_discrete(name = "Treatment model: ") +
+    scale_fill_manual(values= c("#F8766D", "#FF6C90", "#A3A500", "#D89000")) +
+    scale_x_discrete(labels=x.labels.AY,
+                     limits = rev) +
+    theme(legend.position = "none",legend.margin=margin(1,5,5,5), legend.justification="center",
+          legend.box.margin=margin(0,0,0,0),legend.text=element_text(size=14), legend.key.width = unit(0.75, "cm"), legend.spacing.x = unit(1, 'cm'), legend.spacing.y = unit(1, 'cm')) +  
+    theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
+    theme(axis.title=element_text(family="serif", size=16)) +
+    theme(axis.text.y=element_text(family="serif", size=16)) +
+    theme(axis.text.x=element_text(family="serif", size=16)) +
+    theme(legend.text=element_text(family="serif", size=14)) +
+    theme(legend.title=element_text(family="serif", size=14)) +
+    theme(strip.text.x = element_text(family="serif", size=16)) +
+    theme(strip.text.y = element_text(family="serif", size=16)) +
+    theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l =0))) +
+    theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l =0))) +
+    theme(panel.spacing = unit(1, "lines"))
+  
+  # Get the ggplot grob
+  z.A.mean <- ggplotGrob(sim.results.A.mean.100)
+  
+  # Get the positions of the strips in the gtable: t = top, l = left, ...
+  posR <- subset(z.A.mean$layout, grepl("strip-r", name), select = t:r)
+  
+  # Add a new column to the right of current right strips,
+  # and a new row on top of current top strips
+  width <- z.A.mean$widths[max(posR$r)]    # width of current right strips
+  
+  z.A.mean <- gtable_add_cols(z.A.mean, width, max(posR$r))
+  
+  # Position the grobs in the gtable
+  z.A.mean <- gtable_add_grob(z.A.mean, stripR, t = min(posR$t), l = max(posR$r) + 1, b = max(posR$b), name = "strip-right")
+  
+  # Add small gaps between strips
+  z.A.mean <- gtable_add_cols(z.A.mean, unit(1/5, "line"), max(posR$r))
+  
+  # Draw it
+  grid.newpage()
+  grid.draw(z.A.mean)
+  
+  ggsave(paste0("sim_results/static_simulation_est_A_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_FALSE","_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.A.mean,scale=1.75)
+  
+  # treatment estimates -diff (40 covariates)
+  sim.results.A.mean.diff.40 <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="A.mean.diff" & results_AY_preds_long$ncovars==40,],  
                                     aes(x=factor(Treatment), y=value,fill=forcats::fct_rev(Estimator)))  + geom_boxplot(outlier.alpha = 0.3,outlier.size = 1, outlier.stroke = 0.1, lwd=0.25) +
     facet_grid(overlap.setting ~ ., scales = "free", labeller=labeller3)  +  xlab("Treatment level (j)") + ylab("Absolute difference between estimated and observed treatment probabilities") + #ggtitle(paste0("Accuracy of treatment estimation (J=",J,", n=", n,")")) +
     #scale_fill_discrete(name = "Treatment model: ") +
@@ -938,7 +1123,7 @@ if(use.SL){
     theme(panel.spacing = unit(1, "lines"))
   
   # Get the ggplot grob
-  z.A.mean.diff <- ggplotGrob(sim.results.A.mean.diff)
+  z.A.mean.diff <- ggplotGrob(sim.results.A.mean.diff.40)
   
   # Get the positions of the strips in the gtable: t = top, l = left, ...
   posR <- subset(z.A.mean.diff$layout, grepl("strip-r", name), select = t:r)
@@ -959,10 +1144,56 @@ if(use.SL){
   grid.newpage()
   grid.draw(z.A.mean.diff)
   
-  ggsave(paste0("sim_results/static_simulation_est_A_diff_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.A.mean.diff,scale=1.75)
+  ggsave(paste0("sim_results/static_simulation_est_A_diff_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_FALSE","_R_",results[[1]][[1]]$R,".png"),plot = z.A.mean.diff,scale=1.75)
   
-  # initial outcome estimates
-  sim.results.Y.initial <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="Y.initial",], 
+  # treatment estimates -diff (100 covariates)
+  sim.results.A.mean.diff.100 <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="A.mean.diff" & results_AY_preds_long$ncovars==100,],  
+                                       aes(x=factor(Treatment), y=value,fill=forcats::fct_rev(Estimator)))  + geom_boxplot(outlier.alpha = 0.3,outlier.size = 1, outlier.stroke = 0.1, lwd=0.25) +
+    facet_grid(overlap.setting ~ ., scales = "free", labeller=labeller3)  +  xlab("Treatment level (j)") + ylab("Absolute difference between estimated and observed treatment probabilities") + #ggtitle(paste0("Accuracy of treatment estimation (J=",J,", n=", n,")")) +
+    #scale_fill_discrete(name = "Treatment model: ") +
+    scale_fill_manual(values= c("#F8766D", "#FF6C90", "#A3A500", "#D89000")) +
+    scale_x_discrete(labels=x.labels.AY,
+                     limits = rev) +
+    #coord_cartesian(ylim=c(0,0.0075)) +
+    theme(legend.position = "none",legend.margin=margin(1,5,5,5), legend.justification="center",
+          legend.box.margin=margin(0,0,0,0),legend.text=element_text(size=14), legend.key.width = unit(0.75, "cm"), legend.spacing.x = unit(1, 'cm'), legend.spacing.y = unit(1, 'cm')) +    theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
+    theme(axis.title=element_text(family="serif", size=16)) +
+    theme(axis.text.y=element_text(family="serif", size=16)) +
+    theme(axis.text.x=element_text(family="serif", size=16)) +
+    theme(legend.text=element_text(family="serif", size=14)) +
+    theme(legend.title=element_text(family="serif", size=14)) +
+    theme(strip.text.x = element_text(family="serif", size=16)) +
+    theme(strip.text.y = element_text(family="serif", size=16)) +
+    theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l =0))) +
+    theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l =0))) +
+    theme(panel.spacing = unit(1, "lines"))
+  
+  # Get the ggplot grob
+  z.A.mean.diff <- ggplotGrob(sim.results.A.mean.diff.100)
+  
+  # Get the positions of the strips in the gtable: t = top, l = left, ...
+  posR <- subset(z.A.mean.diff$layout, grepl("strip-r", name), select = t:r)
+  
+  # Add a new column to the right of current right strips,
+  # and a new row on top of current top strips
+  width <- z.A.mean.diff$widths[max(posR$r)]    # width of current right strips
+  
+  z.A.mean.diff <- gtable_add_cols(z.A.mean.diff, width, max(posR$r))
+  
+  # Position the grobs in the gtable
+  z.A.mean.diff <- gtable_add_grob(z.A.mean.diff, stripR, t = min(posR$t), l = max(posR$r) + 1, b = max(posR$b), name = "strip-right")
+  
+  # Add small gaps between strips
+  z.A.mean.diff <- gtable_add_cols(z.A.mean.diff, unit(1/5, "line"), max(posR$r))
+  
+  # Draw it
+  grid.newpage()
+  grid.draw(z.A.mean.diff)
+  
+  ggsave(paste0("sim_results/static_simulation_est_A_diff_estimand_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_FALSE","_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.A.mean.diff,scale=1.75)
+  
+  # initial outcome estimates (40 covariates)
+  sim.results.Y.initial.40 <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="Y.initial" & results_AY_preds_long$ncovars==40,], 
                                   aes(x=factor(Treatment), y=value,fill=forcats::fct_rev(Estimator)))  + geom_boxplot(outlier.alpha = 0.3,outlier.size = 1, outlier.stroke = 0.1, lwd=0.25) +
     facet_grid(overlap.setting ~ gamma.setting, scales = "fixed", labeller=labeller3)  +  xlab("Treatment level (j)") + ylab("Initial outcome estimate") + #ggtitle(paste0("Initial outcome estimate (J=",J,", n=", n,")")) +
     #scale_fill_discrete(name = "Outcome model: ") +
@@ -984,7 +1215,7 @@ if(use.SL){
     theme(panel.spacing = unit(1, "lines"))
   
   # Get the ggplot grob
-  z.Y.initial <- ggplotGrob(sim.results.Y.initial)
+  z.Y.initial <- ggplotGrob(sim.results.Y.initial.40)
   
   # Get the positions of the strips in the gtable: t = top, l = left, ...
   posR <- subset(z.Y.initial$layout, grepl("strip-r", name), select = t:r)
@@ -1005,10 +1236,56 @@ if(use.SL){
   grid.newpage()
   grid.draw(z.Y.initial)
   
-  ggsave(paste0("sim_results/static_simulation_est_Y_initial_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.Y.initial,scale=1.75)
+  ggsave(paste0("sim_results/static_simulation_est_Y_initial_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_FALSE","_R_",results[[1]][[1]]$R,".png"),plot = z.Y.initial,scale=1.75)
   
-  # initial outcome estimates - diff
-  sim.results.Y.initial.diff <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="Y.initial.diff",], 
+  # initial outcome estimates (100 covariates)
+  sim.results.Y.initial.100 <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="Y.initial" & results_AY_preds_long$ncovars==100,], 
+                                     aes(x=factor(Treatment), y=value,fill=forcats::fct_rev(Estimator)))  + geom_boxplot(outlier.alpha = 0.3,outlier.size = 1, outlier.stroke = 0.1, lwd=0.25) +
+    facet_grid(overlap.setting ~ gamma.setting, scales = "fixed", labeller=labeller3)  +  xlab("Treatment level (j)") + ylab("Initial outcome estimate") + #ggtitle(paste0("Initial outcome estimate (J=",J,", n=", n,")")) +
+    #scale_fill_discrete(name = "Outcome model: ") +
+    scale_fill_manual(values= c("#F8766D", "#FF6C90", "#A3A500", "#D89000")) +
+    scale_x_discrete(labels=x.labels.AY,
+                     limits = rev) +
+    theme(legend.position = "none",legend.margin=margin(1,5,5,5), legend.justification="center",
+          legend.box.margin=margin(0,0,0,0),legend.text=element_text(size=14), legend.key.width = unit(0.75, "cm"), legend.spacing.x = unit(1, 'cm'), legend.spacing.y = unit(1, 'cm')) +    theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
+    theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
+    theme(axis.title=element_text(family="serif", size=16)) +
+    theme(axis.text.y=element_text(family="serif", size=16)) +
+    theme(axis.text.x=element_text(family="serif", size=16)) +
+    theme(legend.text=element_text(family="serif", size=14)) +
+    theme(legend.title=element_text(family="serif", size=14)) +
+    theme(strip.text.x = element_text(family="serif", size=16)) +
+    theme(strip.text.y = element_text(family="serif", size=16)) +
+    theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l =0))) +
+    theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l =0))) +
+    theme(panel.spacing = unit(1, "lines"))
+  
+  # Get the ggplot grob
+  z.Y.initial <- ggplotGrob(sim.results.Y.initial.100)
+  
+  # Get the positions of the strips in the gtable: t = top, l = left, ...
+  posR <- subset(z.Y.initial$layout, grepl("strip-r", name), select = t:r)
+  
+  # Add a new column to the right of current right strips,
+  # and a new row on top of current top strips
+  width <- z.Y.initial$widths[max(posR$r)]    # width of current right strips
+  
+  z.Y.initial <- gtable_add_cols(z.Y.initial, width, max(posR$r))
+  
+  # Position the grobs in the gtable
+  z.Y.initial <- gtable_add_grob(z.Y.initial, stripR, t = min(posR$t), l = max(posR$r) + 1, b = max(posR$b), name = "strip-right")
+  
+  # Add small gaps between strips
+  z.Y.initial <- gtable_add_cols(z.Y.initial, unit(1/5, "line"), max(posR$r))
+  
+  # Draw it
+  grid.newpage()
+  grid.draw(z.Y.initial)
+  
+  ggsave(paste0("sim_results/static_simulation_est_Y_initial_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_FALSE","_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.Y.initial,scale=1.75)
+  
+  # initial outcome estimates - diff (40 covars)
+  sim.results.Y.initial.diff.40 <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="Y.initial.diff" & results_AY_preds_long$ncovars==40,], 
                                        aes(x=factor(Treatment), y=value,fill=forcats::fct_rev(Estimator)))  + geom_boxplot(outlier.alpha = 0.3,outlier.size = 1, outlier.stroke = 0.1, lwd=0.25) +
     facet_grid(overlap.setting ~ gamma.setting, scales = "free", labeller=labeller3)  +  xlab("Treatment level (j)") + ylab("Absolute difference between initial outcome estimate and observed outcome") + #ggtitle(paste0("Accuracy of outcome estimation (J=",J,", n=", n,")")) +
     #scale_fill_discrete(name = "Outcome model: ") +
@@ -1030,7 +1307,7 @@ if(use.SL){
     theme(panel.spacing = unit(1, "lines"))
   
   # Get the ggplot grob
-  z.Y.initial.diff <- ggplotGrob(sim.results.Y.initial.diff)
+  z.Y.initial.diff <- ggplotGrob(sim.results.Y.initial.diff.40)
   
   # Get the positions of the strips in the gtable: t = top, l = left, ...
   posR <- subset(z.Y.initial.diff$layout, grepl("strip-r", name), select = t:r)
@@ -1051,10 +1328,56 @@ if(use.SL){
   grid.newpage()
   grid.draw(z.Y.initial.diff)
   
-  ggsave(paste0("sim_results/static_simulation_est_Y_initial_diff_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.Y.initial.diff,scale=1.75)
+  ggsave(paste0("sim_results/static_simulation_est_Y_initial_diff_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_FALSE","_R_",results[[1]][[1]]$R,".png"),plot = z.Y.initial.diff,scale=1.75)
   
-  # ESS
-  sim.results.ESS <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="ESS",],
+  # initial outcome estimates - diff (100 covars)
+  sim.results.Y.initial.diff.100 <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="Y.initial.diff" & results_AY_preds_long$ncovars==100,], 
+                                          aes(x=factor(Treatment), y=value,fill=forcats::fct_rev(Estimator)))  + geom_boxplot(outlier.alpha = 0.3,outlier.size = 1, outlier.stroke = 0.1, lwd=0.25) +
+    facet_grid(overlap.setting ~ gamma.setting, scales = "free", labeller=labeller3)  +  xlab("Treatment level (j)") + ylab("Absolute difference between initial outcome estimate and observed outcome") + #ggtitle(paste0("Accuracy of outcome estimation (J=",J,", n=", n,")")) +
+    #scale_fill_discrete(name = "Outcome model: ") +
+    scale_fill_manual(values= c("#F8766D", "#FF6C90", "#A3A500", "#D89000")) +
+    scale_x_discrete(labels=x.labels.AY,
+                     limits = rev) +
+    theme(legend.position = "none",legend.margin=margin(1,5,5,5), legend.justification="center",
+          legend.box.margin=margin(0,0,0,0),legend.text=element_text(size=14), legend.key.width = unit(0.75, "cm"), legend.spacing.x = unit(1, 'cm'), legend.spacing.y = unit(1, 'cm')) +    theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
+    theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
+    theme(axis.title=element_text(family="serif", size=16)) +
+    theme(axis.text.y=element_text(family="serif", size=16)) +
+    theme(axis.text.x=element_text(family="serif", size=16)) +
+    theme(legend.text=element_text(family="serif", size=14)) +
+    theme(legend.title=element_text(family="serif", size=14)) +
+    theme(strip.text.x = element_text(family="serif", size=16)) +
+    theme(strip.text.y = element_text(family="serif", size=16)) +
+    theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l =0))) +
+    theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l =0))) +
+    theme(panel.spacing = unit(1, "lines"))
+  
+  # Get the ggplot grob
+  z.Y.initial.diff <- ggplotGrob(sim.results.Y.initial.diff.100)
+  
+  # Get the positions of the strips in the gtable: t = top, l = left, ...
+  posR <- subset(z.Y.initial.diff$layout, grepl("strip-r", name), select = t:r)
+  
+  # Add a new column to the right of current right strips,
+  # and a new row on top of current top strips
+  width <- z.Y.initial.diff$widths[max(posR$r)]    # width of current right strips
+  
+  z.Y.initial.diff <- gtable_add_cols(z.Y.initial.diff, width, max(posR$r))
+  
+  # Position the grobs in the gtable
+  z.Y.initial.diff <- gtable_add_grob(z.Y.initial.diff, stripR, t = min(posR$t), l = max(posR$r) + 1, b = max(posR$b), name = "strip-right")
+  
+  # Add small gaps between strips
+  z.Y.initial.diff <- gtable_add_cols(z.Y.initial.diff, unit(1/5, "line"), max(posR$r))
+  
+  # Draw it
+  grid.newpage()
+  grid.draw(z.Y.initial.diff)
+  
+  ggsave(paste0("sim_results/static_simulation_est_Y_initial_diff_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_FALSE","_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.Y.initial.diff,scale=1.75)
+  
+  # ESS (40 covars)
+  sim.results.ESS.40 <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="ESS" & results_AY_preds_long$ncovars==40,],
                             aes(x=factor(Treatment), y=value,fill=forcats::fct_rev(Estimator)))  + geom_boxplot(outlier.alpha = 0.3,outlier.size = 1, outlier.stroke = 0.1, lwd=0.25) +
     facet_grid(overlap.setting ~ ., scales = "fixed", labeller=labeller3)  +  xlab("Treatment level (j)") + ylab("Estimated effective sample size (ESS)") + #ggtitle(paste0("Effective sample size (J=",J,", n=", n,")")) +
     #scale_fill_discrete(name = "Treatment model: ") +
@@ -1076,7 +1399,7 @@ if(use.SL){
     theme(panel.spacing = unit(1, "lines"))
   
   # Get the ggplot grob
-  z.ESS <- ggplotGrob(sim.results.ESS)
+  z.ESS <- ggplotGrob(sim.results.ESS.40)
   
   # Get the positions of the strips in the gtable: t = top, l = left, ...
   posR <- subset(z.ESS$layout, grepl("strip-r", name), select = t:r)
@@ -1097,10 +1420,56 @@ if(use.SL){
   grid.newpage()
   grid.draw(z.ESS)
   
-  ggsave(paste0("sim_results/static_simulation_est_ESS_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.ESS,scale=1.75)
+  ggsave(paste0("sim_results/static_simulation_est_ESS_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_FALSE","_R_",results[[1]][[1]]$R,".png"),plot = z.ESS,scale=1.75)
   
-  # ESS_ratio
-  sim.results.ESS_ratio <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="ESS_ratio",],
+  # ESS (100 covars)
+  sim.results.ESS.100 <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="ESS" & results_AY_preds_long$ncovars==100,],
+                               aes(x=factor(Treatment), y=value,fill=forcats::fct_rev(Estimator)))  + geom_boxplot(outlier.alpha = 0.3,outlier.size = 1, outlier.stroke = 0.1, lwd=0.25) +
+    facet_grid(overlap.setting ~ ., scales = "fixed", labeller=labeller3)  +  xlab("Treatment level (j)") + ylab("Estimated effective sample size (ESS)") + #ggtitle(paste0("Effective sample size (J=",J,", n=", n,")")) +
+    #scale_fill_discrete(name = "Treatment model: ") +
+    scale_fill_manual(values= c("#F8766D", "#FF6C90", "#A3A500", "#D89000")) +
+    scale_x_discrete(labels=x.labels.AY,
+                     limits = rev) +
+    theme(legend.position = "none",legend.margin=margin(1,5,5,5), legend.justification="center",
+          legend.box.margin=margin(0,0,0,0),legend.text=element_text(size=14), legend.key.width = unit(0.75, "cm"), legend.spacing.x = unit(1, 'cm'), legend.spacing.y = unit(1, 'cm')) +    theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
+    theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
+    theme(axis.title=element_text(family="serif", size=16)) +
+    theme(axis.text.y=element_text(family="serif", size=16)) +
+    theme(axis.text.x=element_text(family="serif", size=16)) +
+    theme(legend.text=element_text(family="serif", size=14)) +
+    theme(legend.title=element_text(family="serif", size=14)) +
+    theme(strip.text.x = element_text(family="serif", size=16)) +
+    theme(strip.text.y = element_text(family="serif", size=16)) +
+    theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l =0))) +
+    theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l =0))) +
+    theme(panel.spacing = unit(1, "lines"))
+  
+  # Get the ggplot grob
+  z.ESS <- ggplotGrob(sim.results.ESS.100)
+  
+  # Get the positions of the strips in the gtable: t = top, l = left, ...
+  posR <- subset(z.ESS$layout, grepl("strip-r", name), select = t:r)
+  
+  # Add a new column to the right of current right strips,
+  # and a new row on top of current top strips
+  width <- z.ESS$widths[max(posR$r)]    # width of current right strips
+  
+  z.ESS <- gtable_add_cols(z.ESS, width, max(posR$r))
+  
+  # Position the grobs in the gtable
+  z.ESS <- gtable_add_grob(z.ESS, stripR, t = min(posR$t), l = max(posR$r) + 1, b = max(posR$b), name = "strip-right")
+  
+  # Add small gaps between strips
+  z.ESS <- gtable_add_cols(z.ESS, unit(1/5, "line"), max(posR$r))
+  
+  # Draw it
+  grid.newpage()
+  grid.draw(z.ESS)
+  
+  ggsave(paste0("sim_results/static_simulation_est_ESS_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_FALSE","_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.ESS,scale=1.75)
+  
+  # ESS_ratio (40 covariates)
+  sim.results.ESS_ratio.40 <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="ESS_ratio" & results_AY_preds_long$ncovars==40,],
                                   aes(x=factor(Treatment), y=value,fill=forcats::fct_rev(Estimator)))  + geom_boxplot(outlier.alpha = 0.3,outlier.size = 1, outlier.stroke = 0.1, lwd=0.25) +
     facet_grid(overlap.setting ~ ., scales = "fixed", labeller=labeller3)  +  xlab("Treatment level (j)") + ylab(TeX(paste0('Estimated effective sample size (ESS) ratio, $ESS_j/n_j$'))) + #ggtitle(paste0("Effective sample size ratio (J=",J,", n=", n,")")) +
     #scale_fill_discrete(name = "Treatment model: ") +
@@ -1123,7 +1492,7 @@ if(use.SL){
     theme(panel.spacing = unit(1, "lines"))
   
   # Get the ggplot grob
-  z.ESS_ratio <- ggplotGrob(sim.results.ESS_ratio)
+  z.ESS_ratio <- ggplotGrob(sim.results.ESS_ratio.40)
   
   # Get the positions of the strips in the gtable: t = top, l = left, ...
   posR <- subset(z.ESS_ratio$layout, grepl("strip-r", name), select = t:r)
@@ -1144,5 +1513,52 @@ if(use.SL){
   grid.newpage()
   grid.draw(z.ESS_ratio)
   
-  ggsave(paste0("sim_results/static_simulation_est_ESS_ratio_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.ESS_ratio,scale=1.75)
+  ggsave(paste0("sim_results/static_simulation_est_ESS_ratio_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_",covars40,"_covars_100_FALSE","_R_",results[[1]][[1]]$R,".png"),plot = z.ESS_ratio,scale=1.75)
+  
+  # ESS_ratio (100 covariates)
+  sim.results.ESS_ratio.100 <- ggplot(data=results_AY_preds_long[results_AY_preds_long$variable=="ESS_ratio" & results_AY_preds_long$ncovars==100,],
+                                     aes(x=factor(Treatment), y=value,fill=forcats::fct_rev(Estimator)))  + geom_boxplot(outlier.alpha = 0.3,outlier.size = 1, outlier.stroke = 0.1, lwd=0.25) +
+    facet_grid(overlap.setting ~ ., scales = "fixed", labeller=labeller3)  +  xlab("Treatment level (j)") + ylab(TeX(paste0('Estimated effective sample size (ESS) ratio, $ESS_j/n_j$'))) + #ggtitle(paste0("Effective sample size ratio (J=",J,", n=", n,")")) +
+    #scale_fill_discrete(name = "Treatment model: ") +
+    scale_fill_manual(values= c("#F8766D", "#FF6C90", "#A3A500", "#D89000")) +
+    scale_x_discrete(labels=x.labels.AY,
+                     limits = rev) +
+    coord_cartesian(ylim=c(0,1)) +
+    theme(legend.position = "none",legend.margin=margin(1,5,5,5), legend.justification="center",
+          legend.box.margin=margin(0,0,0,0),legend.text=element_text(size=14), legend.key.width = unit(0.75, "cm"), legend.spacing.x = unit(1, 'cm'), legend.spacing.y = unit(1, 'cm')) +    theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
+    theme(plot.title = element_text(hjust = 0.5, family="serif", size=16)) +
+    theme(axis.title=element_text(family="serif", size=16)) +
+    theme(axis.text.y=element_text(family="serif", size=16)) +
+    theme(axis.text.x=element_text(family="serif", size=16)) +
+    theme(legend.text=element_text(family="serif", size=14)) +
+    theme(legend.title=element_text(family="serif", size=14)) +
+    theme(strip.text.x = element_text(family="serif", size=16)) +
+    theme(strip.text.y = element_text(family="serif", size=16)) +
+    theme(axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l =0))) +
+    theme(axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l =0))) +
+    theme(panel.spacing = unit(1, "lines"))
+  
+  # Get the ggplot grob
+  z.ESS_ratio <- ggplotGrob(sim.results.ESS_ratio.100)
+  
+  # Get the positions of the strips in the gtable: t = top, l = left, ...
+  posR <- subset(z.ESS_ratio$layout, grepl("strip-r", name), select = t:r)
+  
+  # Add a new column to the right of current right strips,
+  # and a new row on top of current top strips
+  width <- z.ESS_ratio$widths[max(posR$r)]    # width of current right strips
+  
+  z.ESS_ratio <- gtable_add_cols(z.ESS_ratio, width, max(posR$r))
+  
+  # Position the grobs in the gtable
+  z.ESS_ratio <- gtable_add_grob(z.ESS_ratio, stripR, t = min(posR$t), l = max(posR$r) + 1, b = max(posR$b), name = "strip-right")
+  
+  # Add small gaps between strips
+  z.ESS_ratio <- gtable_add_cols(z.ESS_ratio, unit(1/5, "line"), max(posR$r))
+  
+  # Draw it
+  grid.newpage()
+  grid.draw(z.ESS_ratio)
+  
+  ggsave(paste0("sim_results/static_simulation_est_ESS_ratio_",estimand,"_J_",J,"_n_",n,"_outcome_",outcome.type,"_use_SL_",use.SL,"_covars_40_FALSE",covars40,"_covars_100_",covars100,"_R_",results[[1]][[1]]$R,".png"),plot = z.ESS_ratio,scale=1.75)
 }

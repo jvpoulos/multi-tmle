@@ -146,7 +146,8 @@ dev.off() # Close the file
 # Identify the unique drug groups
 proper <- function(x) paste0(toupper(substr(x, 1, 1)), tolower(substring(x, 2)))
 fup3yr_episode_months_deid$drug_group <- proper(fup3yr_episode_months_deid$drug_group)
-unique_drug_groups <- unique(factor(fup3yr_episode_months_deid$drug_group))[-6] # omit Reference
+unique_drug_groups_withref <- unique(factor(fup3yr_episode_months_deid$drug_group))
+unique_drug_groups <- unique_drug_groups_withref[unique_drug_groups_withref != "Aripiprazole"] # omit Reference
 unique_drug_groups <- droplevels(unique_drug_groups)
 
 # Initialize an empty vector to hold RMST values

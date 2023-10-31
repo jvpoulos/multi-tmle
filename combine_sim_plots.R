@@ -722,7 +722,7 @@ if(use.SL){
                                     "ESS"= c(unlist(ess_tmle),unlist(ess_tmle_bin),unlist(ess_tmle_glm),unlist(ess_tmle_glm_bin)),
                                     "ESS_ratio"= c(unlist(ess_tmle)/unlist(obs_treatment_n),unlist(ess_tmle_bin)/unlist(obs_treatment_n),unlist(ess_tmle_glm)/unlist(obs_treatment_n),unlist(ess_tmle_glm_bin)/unlist(obs_treatment_n)),
                                     "Estimator"=c(rep("Multinomial (SL)",length.out=length(unlist(Ahat_tmle))), rep("Binomial (SL)",length.out=length(unlist(Ahat_tmle_bin))), rep("Multinomial (GLM)",length.out=length(unlist(Ahat_tmle_glm))), rep("Binomial (GLM)",length.out=length(unlist(Ahat_tmle_glm_bin)))),
-                                    filename=c(unlist(sapply(1:length(setdiff(filenames,filenames[grep("use_SL_FALSE",filenames)])), function(i) rep(setdiff(filenames,filenames[grep("use_SL_FALSE",filenames)])[i], length.out=1000*J))))) # (1000*9*6) *5 = (54000)*5 = 270000
+                                    filename=c(unlist(sapply(1:length(setdiff(filenames,filenames[grep("use_SL_FALSE",filenames)])), function(i) rep(setdiff(filenames,filenames[grep("use_SL_FALSE",filenames)])[i], length.out=R*J))))) # (1000*9*6) *5 = (54000)*5 = 270000
   
   results.AY.df$J <- ifelse(J==3,3,6)
   results.AY.preds.df$J <- ifelse(J==3,3,6)
