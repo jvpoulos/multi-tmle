@@ -78,6 +78,12 @@ Contents
 
 	+ *covars100*: logical flag. When TRUE, generate 100 covariates when J=6; if FALSE, generate 6. Default is FALSE. 
 
+	+ *misTreatment*: logical flag. When TRUE, misspecify treatment model. Default is FALSE. 
+
+	+ *misOutcome*: logical flag. When TRUE, misspecify outcome model. Default is FALSE. 
+
+	+ *misBoth*: logical flag. When TRUE, misspecify both treatment and outcome models. Default is FALSE. 
+
 	+ *scale.continuous*: logical flag. When center and scale continuous variables in outcome and treatment models. Default is TRUE. 
 
 	+ *n.folds*: number of cross-validation folds for Super Learner. Defaults to 2 and is ignored if *use.SL* is FALSE. 
@@ -101,9 +107,9 @@ Instructions
 
 1. Install require **R** packages: `Rscript package_list.R`
 
-2. For simulations, run: `Rscript tmle_MultinomialTrts.R [arg1] [arg2] [arg3] [arg4]`; where `[arg1]` is a number specifying the simulation setting [1-18], `[arg2]`  is the outcome type ['binomial' or 'continuous'], `[arg3]` is a logical flag if super learner estimation is to be used, `[arg4]` is a logical flag if MPI parallel processing is used, and `[arg5]` and `[arg6]` are logical flags for generating higher dimensional covariates, 40 or 100, resp (J must be 6). E.g.,
+2. For simulations, run: `Rscript tmle_MultinomialTrts.R [arg1] [arg2] [arg3] [arg4]`; where `[arg1]` is a number specifying the simulation setting [1-18], `[arg2]`  is the outcome type ['binomial' or 'continuous'], `[arg3]` is a logical flag if super learner estimation is to be used, `[arg4]` is a logical flag if MPI parallel processing is used, `[arg5]` and `[arg6]` are logical flags for generating higher dimensional covariates, 40 or 100, resp (J must be 6), and  `[arg7]`, `[arg8]`, and `[arg9]` are logical flags for misspecifying the treatment model, outcome model, or both. E.g.,
 
-	`Rscript tmle_MultinomialTrts.R 1 'binomial' 'TRUE' 'TRUE' 'FALSE' 'FALSE'`
+	`Rscript tmle_MultinomialTrts.R 1 'binomial' 'TRUE' 'TRUE' 'FALSE' 'FALSE' 'FALSE' 'FALSE' 'FALSE'`
 
 3. To plot simulation results, run: `Rscript combine_sim_plots.R [arg1] [arg2] [arg3]`; where `[arg1]` specifies the output path of the simulation results; `[arg2]` specifies the number of treatments [3,6]; `[arg3]` specifies is a logical flag if super learner estimates are to be used (if 'FALSE', GLM estimates are used); and `[arg4]` and `[arg5]` are logical flags for generating higher dimensional covariates, 40 or 100, resp (J must be 6). E.g., 
 	

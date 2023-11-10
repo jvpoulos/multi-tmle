@@ -12,7 +12,7 @@ source('./src/misc_fns.R')
 # Simulation function #
 ######################
 
-staticSim <- function(r, J, n, gbound, ybound, n.folds, overlap.setting, gamma.setting, outcome.type, target.gwt, use.SL, scale.continuous, covars40, covars100){
+staticSim <- function(r, J, n, gbound, ybound, n.folds, overlap.setting, gamma.setting, outcome.type, target.gwt, use.SL, scale.continuous, covars40, covars100, misTreatment, misOutcome, misBoth){
   
   library(purrr)
   library(origami)
@@ -74,11 +74,18 @@ staticSim <- function(r, J, n, gbound, ybound, n.folds, overlap.setting, gamma.s
   metalearner_A_bin <- make_learner(Lrnr_solnp,learner_function=metalearner_logistic_binomial,eval_function=loss_loglik_binomial)
   
   ## fit initial outcome model
+  
+  if(misOutcome | misBoth){
+    L.outcome <- L[,1:(ncol(L)-1)]
+  }else{
+    L.outcome <- L
+  }
+  
   if(use.SL){
     
     # define task and candidate learners
-    initial_model_for_Y_task <- make_sl3_Task(cbind(Y,L,obs.treatment), covariates = c(colnames(L),colnames(obs.treatment)), outcome = "Y", outcome_type=outcome.type, 
-                                              folds = origami::make_folds(cbind(Y,L,obs.treatment), fold_fun = folds_vfold, V = n.folds))
+    initial_model_for_Y_task <- make_sl3_Task(cbind(Y,L.outcome,obs.treatment), covariates = c(colnames(L.outcome),colnames(obs.treatment)), outcome = "Y", outcome_type=outcome.type, 
+                                              folds = origami::make_folds(cbind(Y,L.outcome,obs.treatment), fold_fun = folds_vfold, V = n.folds))
     
     # Super Learner algorithm
     
@@ -90,21 +97,21 @@ staticSim <- function(r, J, n, gbound, ybound, n.folds, overlap.setting, gamma.s
     initial_model_for_Y_preds <- initial_model_for_Y_sl_fit$predict(initial_model_for_Y_task) # predicted probs.
     
     for(j in 1:J){
-      newdata <- cbind(Y,L,matrix(0, nrow=nrow(obs.treatment), ncol=ncol(obs.treatment), dimnames = dimnames(obs.treatment)))
+      newdata <- cbind(Y,L.outcome,matrix(0, nrow=nrow(obs.treatment), ncol=ncol(obs.treatment), dimnames = dimnames(obs.treatment)))
       newdata[paste0("D",j)] <- 1
-      assign(paste0("Q",j), initial_model_for_Y_sl_fit$predict(sl3_Task$new(newdata, covariates = c(colnames(L),colnames(obs.treatment)), outcome = "Y", outcome_type="binomial")))
+      assign(paste0("Q",j), initial_model_for_Y_sl_fit$predict(sl3_Task$new(newdata, covariates = c(colnames(L.outcome),colnames(obs.treatment)), outcome = "Y", outcome_type="binomial")))
     }
   } else{
     if(outcome.type=="continuous"){
-      initial_model_for_Y <- glm(Y~.,data=cbind(Y,obs.treatment[,-2],L), family=gaussian(), control = glm.control(maxit = 100))
+      initial_model_for_Y <- glm(Y~.,data=cbind(Y,obs.treatment[,-2],L.outcome), family=gaussian(), control = glm.control(maxit = 100))
       initial_model_for_Y_preds <- predict(initial_model_for_Y)
     }else{
-      initial_model_for_Y <- glm(Y~.,data=cbind(Y,obs.treatment[,-2],L), family=binomial(), control = glm.control(maxit = 100))
+      initial_model_for_Y <- glm(Y~.,data=cbind(Y,obs.treatment[,-2],L.outcome), family=binomial(), control = glm.control(maxit = 100))
       initial_model_for_Y_preds <- predict(initial_model_for_Y,type="response") # predicted probs.
     }
     
     for(j in 1:J){
-      newdata <- cbind(Y,L,matrix(0, nrow=nrow(obs.treatment), ncol=ncol(obs.treatment), dimnames = dimnames(obs.treatment)))
+      newdata <- cbind(Y,L.outcome,matrix(0, nrow=nrow(obs.treatment), ncol=ncol(obs.treatment), dimnames = dimnames(obs.treatment)))
       newdata[paste0("D",j)] <- 1
       assign(paste0("Q",j), predict(initial_model_for_Y,newdata=newdata, type="response"))
     }
@@ -118,12 +125,18 @@ staticSim <- function(r, J, n, gbound, ybound, n.folds, overlap.setting, gamma.s
   
   ##  fit initial treatment model
   
+  if(misTreatment | misBoth){
+    L.treatment <- L[,1:(ncol(L)-1)]
+  }else{
+    L.treatment <- L
+  }
+  
   if(use.SL){
     
     # multinomial
     
-    initial_model_for_A_task <- make_sl3_Task(cbind(A,L), covariates = c(names(L)), outcome = "A", outcome_type="categorical", 
-                                              folds = origami::make_folds(cbind(A,L), fold_fun = folds_vfold, V = n.folds))
+    initial_model_for_A_task <- make_sl3_Task(cbind(A,L.treatment), covariates = c(names(L.treatment)), outcome = "A", outcome_type="categorical", 
+                                              folds = origami::make_folds(cbind(A,L.treatment), fold_fun = folds_vfold, V = n.folds))
     
     initial_model_for_A_sl <- make_learner(Lrnr_sl, # cross-validates base models
                                            learners = learner_stack_A,
@@ -139,8 +152,8 @@ staticSim <- function(r, J, n, gbound, ybound, n.folds, overlap.setting, gamma.s
     
     # binomial
     
-    initial_model_for_A_task_bin <- lapply(1:J, function(j) make_sl3_Task(cbind("A"=obs.treatment[,j],L), covariates = c(names(L)), outcome = "A", outcome_type="binomial",
-                                                                          folds = origami::make_folds(cbind(A,L), fold_fun = folds_vfold, V = n.folds)))
+    initial_model_for_A_task_bin <- lapply(1:J, function(j) make_sl3_Task(cbind("A"=obs.treatment[,j],L.treatment), covariates = c(names(L.treatment)), outcome = "A", outcome_type="binomial",
+                                                                          folds = origami::make_folds(cbind(A,L.treatment), fold_fun = folds_vfold, V = n.folds)))
     
     initial_model_for_A_sl_bin <- make_learner(Lrnr_sl, # cross-validates base models
                                                learners = learner_stack_A_bin,
@@ -155,12 +168,12 @@ staticSim <- function(r, J, n, gbound, ybound, n.folds, overlap.setting, gamma.s
   } else{
     
     # multinomial logistic regression
-    initial_model_for_A <- nnet::multinom(formula=A ~ ., data=cbind(A, L), maxit = 500, trace = FALSE) 
+    initial_model_for_A <- nnet::multinom(formula=A ~ ., data=cbind(A, L.treatment), maxit = 500, trace = FALSE) 
     g_preds <- fitted(initial_model_for_A)
     colnames(g_preds) <- colnames(obs.treatment)
     
     # binomial logistic regression
-    initial_model_for_A_bin <- lapply(1:J, function(j) glm(formula=treatment ~ ., data=cbind("treatment"=obs.treatment[,j], L), family="binomial"))
+    initial_model_for_A_bin <- lapply(1:J, function(j) glm(formula=treatment ~ ., data=cbind("treatment"=obs.treatment[,j], L.treatment), family="binomial"))
     g_preds_bin <- sapply(1:J, function(j) predict(initial_model_for_A_bin[[j]], type="response"))
     colnames(g_preds_bin) <- colnames(obs.treatment)
   }
@@ -265,13 +278,16 @@ settings <- expand.grid("J"=c(3,6),
 settings$n <- ifelse(settings$J==6, 10000, 5000)
 
 options(echo=TRUE)
-args <- commandArgs(trailingOnly = TRUE) # command line arguments # args <- c("6",'binomial', 'TRUE', 'TRUE', 'FALSE', 'TRUE')
+args <- commandArgs(trailingOnly = TRUE) # command line arguments # args <- c("8",'binomial', 'TRUE', 'FALSE', 'FALSE', 'TRUE', 'FALSE', 'FALSE', 'FALSE')
 thisrun <- settings[as.numeric(args[1]),]
 outcome.type <-  as.character(args[2]) # "continuous" or "binomial" 
 use.SL <- as.logical(args[3])  # When TRUE, use Super Learner for initial Y model and treatment model estimation; if FALSE, use GLM
 doMPI <- as.logical(args[4]) # When TRUE, use MPI parallel processing
 covars40 <- as.logical(args[5]) # When TRUE, generate 40 covariates instead of 6
 covars100 <- as.logical(args[6]) # When TRUE, generate 100 covariates instead of 6
+misTreatment <- as.logical(args[7]) # When TRUE, misspecify treatment model
+misOutcome <- as.logical(args[8]) # When TRUE, misspecify outcome model
+misBoth <- as.logical(args[9]) # When TRUE, misspecify both treatment and outcome models
 
 # define parameters
 
@@ -313,7 +329,6 @@ if(!dir.exists(output_dir)){
 }
 
 filename <- paste0(output_dir, 
-                   "static_simulation_results_",
                    "_R_", R,
                    "_n_", n,
                    "_J_", J,
@@ -322,9 +337,12 @@ filename <- paste0(output_dir,
                    "_gamma_setting_", gamma.setting,
                    "_outcome_type_", outcome.type,
                    "_use_SL_", use.SL,
-                   "_covars_40_", covars40,
-                   "_covars_100_", covars100,
-                   "_scale_continuous_", scale.continuous,
+                   "_covars40_", covars40,
+                   "_covars100_", covars100,
+                   "_misTreat_", misTreatment,
+                   "_misOut_", misOutcome,
+                   "_misBoth_", misBoth,
+                   "_scale_cont_", scale.continuous,
                    "_target_gwt_", target.gwt,".rds")
 
 # Setup parallel processing
@@ -357,10 +375,8 @@ if(doMPI){
 # Run simulation #
 #####################
 
-print(paste0('simulation setting: ', " R = ", R, ", n = ", n,", J = ",J, ", overlap.setting = ",overlap.setting, ", gamma.setting = ", gamma.setting, ", outcome.type = ", outcome.type, ", use.SL = ",use.SL, ", scale.continuous = ", scale.continuous, ", covars40 = ", covars40, ", covars100 = ", covars100))
-
 sim.results <- foreach(r = 1:R, .combine='cbind', .verbose = FALSE) %dopar% {
-  staticSim(r=r, J, n, gbound, ybound, n.folds, overlap.setting, gamma.setting, outcome.type, target.gwt, use.SL, scale.continuous, covars40, covars100)
+  staticSim(r=r, J, n, gbound, ybound, n.folds, overlap.setting, gamma.setting, outcome.type, target.gwt, use.SL, scale.continuous, covars40, covars100, misTreatment,misOutcome,misBoth)
 }
 sim.results
 

@@ -50,7 +50,7 @@ generateData <- function(r, J, n, overlap.setting, gamma.setting, outcome.type, 
     X20 <- VGAM::rlaplace(n, location=0, scale=1)
     X21 <- rlnorm_truncated(n, meanlog=0, sdlog=1)
     X22 <- truncated_rnbinom(n, size=10, prob=0.5, 0, 10)
-    X23 <- truncated_rsignrank(n, 10, 0, 10)
+    X23 <- truncated_rsignrank(n, 10, -10, 10)
     X24 <- rbeta(n, shape1=1, shape2=1)
     X25 <- truncated_rchisq(n, df=2, 0, 10)
     X26 <- rbinom(n, size=10, prob=0.5)
@@ -77,66 +77,66 @@ generateData <- function(r, J, n, overlap.setting, gamma.setting, outcome.type, 
   
   if(covars100){ # additional 60 covars using a variety of distributions including normal, uniform, Poisson, exponential, geometric, hypergeometric, and others. 
     # Additional code for 60 more covariates to make it 100
-    X41 <- truncated_rgeom(n, prob=0.3,0,10)
-    X42 <- rhyper(n, m=30, n=20, k=10)
-    X43 <- rlogis(n, location=1, scale=2)
+    X41 <- truncated_rgeom(n, prob=0.1,-5,5)
+    X42 <- truncated_rhyper(n, m=30, N=20, k=10, lower=-5, upper=5)
+    X43 <- truncated_rlogis(n, location=1, scale=2, lower=-5, upper=5)
     X44 <- rweibull(n, shape=3, scale=2)
-    X45 <- truncated_rt(n, df=10,-10,10)
-    X46 <- truncated_rwilcox(n, 10, 10, 0, 10)
+    X45 <- truncated_rt(n, df=10,-5,5)
+    X46 <- truncated_rwilcox(n, 10, 10, 0, 25)
     X47 <- rcauchy_truncated(n, location=1, scale=2)
     X48 <- truncated_rf(n, df1=10, df2=10)
-    X49 <- rgamma(n, shape=2, scale=2)
+    X49 <- truncated_rgamma(n, shape=2, scale=2, lower=-5, upper=5)
     X50 <- rfactorial(n, size=10)
     X51 <- rlnorm_truncated(n, meanlog=1, sdlog=2)
-    X52 <- truncated_rnbinom(n, size=20, prob=0.4,0,10)
-    X53 <- truncated_rsignrank(n, 20, 0, 10)
+    X52 <- truncated_rnbinom(n, size=20, prob=0.6,0,10)
+    X53 <- truncated_rsignrank(n, 10, -10, 10)
     X54 <- rbeta(n, shape1=2, shape2=2)
-    X55 <- truncated_rchisq(n, df=3, 0, 10)
-    X56 <- rbinom(n, size=20, prob=0.4)
+    X55 <- truncated_rchisq(n, df=3, -5, 5)
+    X56 <- rbinom(n, size=20, prob=0.1)
     X57 <- sample(1:10, n, replace = TRUE)  # Custom categorical variable
-    X58 <- rexp_truncated(n, rate=0.2)
-    X59 <- truncated_rpois(n, lambda=4,0,10)
-    X60 <- truncated_rt(n, df=10,-10,10)
-    X61 <- runif(n, 0, 20)
+    X58 <- rexp_truncated(n, rate=0.1)
+    X59 <- truncated_rpois(n, lambda=4,-5,5)
+    X60 <- truncated_rt(n, df=10,-5,5)
+    X61 <- runif(n, 0, 1)
     X62 <- rweibull(n, shape=3, scale=2)
-    X63 <- rnorm(n, mean=10, sd=5)
-    X64 <- truncated_rchisq(n, df=2, 0, 10)
-    X65 <- rexp_truncated(n, rate=0.2)
-    X66 <- truncated_rgeom(n, prob=0.4,0,10)
-    X67 <- rhyper(n, m=30, n=30, k=15)
+    X63 <- truncated_rnorm(n, mean=1, sd=5, lower=-5, upper=5)
+    X64 <- truncated_rchisq(n, df=2, -5, 5)
+    X65 <- rexp_truncated(n, rate=0.1)
+    X66 <- truncated_rgeom(n, prob=0.1,-5,5)
+    X67 <- truncated_rhyper(n, m=30, N=30, k=15, lower=-5, upper=5)
     X68 <- rlnorm_truncated(n, meanlog=1, sdlog=2)
-    X69 <- truncated_rnbinom(n, size=20, prob=0.4,0,10)
-    X70 <- truncated_rpois(n, lambda=5,0,10)
-    X71 <- truncated_rt(n, df=15,-10,10)
-    X72 <- runif(n, 0, 20)
+    X69 <- truncated_rnbinom(n, size=20, prob=0.5,0,10)
+    X70 <- truncated_rpois(n, lambda=5,-5,5)
+    X71 <- truncated_rt(n, df=15,-5,5)
+    X72 <- runif(n, 0, 2)
     X73 <- rweibull(n, shape=4, scale=2)
-    X74 <- truncated_rchisq(n, df=3, 0,10)
-    X75 <- rexp_truncated(n, rate=0.3)
-    X76 <- truncated_rgeom(n, prob=0.5,0,10)
-    X77 <- rhyper(n, m=40, n=40, k=20)
-    X78 <- rlnorm_truncated(n, meanlog=2, sdlog=2)
+    X74 <- truncated_rchisq(n, df=3, -5,5)
+    X75 <- rexp_truncated(n, rate=0.1)
+    X76 <- truncated_rgeom(n, prob=0.1,-5,5)
+    X77 <- truncated_rhyper(n, m=40, N=40, k=20, lower=-5, upper=5)
+    X78 <- rlnorm_truncated(n, meanlog=1, sdlog=2)
     X79 <- truncated_rnbinom(n, size=25, prob=0.5,0,10)
-    X80 <- truncated_rpois(n, lambda=6,0,10)
-    X81 <- truncated_rt(n, df=20,-10,10)
-    X82 <- runif(n, 0, 25)
+    X80 <- truncated_rpois(n, lambda=6,-5,5)
+    X81 <- truncated_rt(n, df=20,-5,5)
+    X82 <- runif(n, 0, 3)
     X83 <- rweibull(n, shape=5, scale=2)
-    X84 <- rnorm(n, mean=15, sd=5)
-    X85 <- truncated_rchisq(n, df=4, 0, 10)
-    X86 <- rexp_truncated(n, rate=0.4)
-    X87 <- truncated_rgeom(n, prob=0.6,0,10)
-    X88 <- rhyper(n, m=50, n=50, k=25)
-    X89 <- rlnorm_truncated(n, meanlog=2, sdlog=3)
+    X84 <- truncated_rnorm(n, mean=1, sd=5, lower=-5, upper=5)
+    X85 <- truncated_rchisq(n, df=4, -5, 5)
+    X86 <- rexp_truncated(n, rate=0.1)
+    X87 <- truncated_rgeom(n, prob=0.2,-5,5)
+    X88 <- truncated_rhyper(n, m=50, N=50, k=25, lower=-10, upper=20)
+    X89 <- rlnorm_truncated(n, meanlog=1, sdlog=3)
     X90 <- truncated_rnbinom(n, size=30, prob=0.6,0,10)
-    X91 <- truncated_rpois(n, lambda=7,0,10)
-    X92 <- truncated_rt(n, df=25,-10,10)
-    X93 <- runif(n, 0, 30)
+    X91 <- truncated_rpois(n, lambda=7,-5,5)
+    X92 <- truncated_rt(n, df=25,-5,5)
+    X93 <- runif(n, 0, 3)
     X94 <- rweibull(n, shape=6, scale=3)
-    X95 <- rnorm(n, mean=20, sd=6)
-    X96 <- truncated_rchisq(n, df=5, 0, 10)
-    X97 <- rexp_truncated(n, rate=0.5)
-    X98 <- truncated_rgeom(n, prob=0.7,0,10)
-    X99 <- rhyper(n, m=60, n=60, k=30)
-    X100 <- rlnorm_truncated(n, meanlog=3, sdlog=3)
+    X95 <- truncated_rnorm(n, mean=1, sd=6, lower=-5, upper=5)
+    X96 <- truncated_rchisq(n, df=5, -5, 5)
+    X97 <- rexp_truncated(n, rate=0.2)
+    X98 <- truncated_rgeom(n, prob=0.2,-5,5)
+    X99 <- truncated_rhyper(n, m=60, N=60, k=30, lower=-10, upper=10)
+    X100 <- rlnorm_truncated(n, meanlog=1, sdlog=3)
     
     # Combine 100 covariates
     X_all_100 <- cbind(X13, X4, X5, X6, X7, X8, X9, X10, X11, X12, X13_new, X14, X15, X16_new, X17, X18, X19, X20, X21, X22, X23, X24, X25, X26, X27, X28_30, X31, X32, X33, X34, X35, X36, X37, X38, X39, X40, X41, X42, X43, X44, X45, X46, X47, X48, X49, X50, X51, X52, X53, X54, X55, X56, X57, X58, X59, X60, X61, X62, X63, X64, X65, X66, X67, X68, X69, X70, X71, X72, X73, X74, X75, X76, X77, X78, X79, X80, X81, X82, X83, X84, X85, X86, X87, X88, X89, X90, X91, X92, X93, X94, X95, X96, X97, X98, X99, X100)
@@ -252,13 +252,23 @@ generateData <- function(r, J, n, overlap.setting, gamma.setting, outcome.type, 
   
   if(gamma.setting == "yang"){ # values in yang et al. 
     if(J==6){
-      base_values <- c(-1.5, 1, 1, 1, 1, 1, 1, 
-                                 -3, 2, 3, 1, 2, 2, 2, 
-                                 3, 3, 1, 2, -1, -1, -4, 
-                                 2.5, 4, 1, 2, -1, -1, -3, 
-                                 2, 5, 1, 2, -1, -1, -2, 
-                                 1.5, 6, 1, 2, -1, -1, -1)
       
+      if(covars100){
+        base_values <- c(-1.5, 1, 1, 1, 1, 1, 1, 
+                         -3, 2, 3, 1, 2, 2, 2, 
+                         3, 3, 1, 2, -1, -1, -4, 
+                         2.5, -2, 1, 2, -1, -1, -3, 
+                         2, -3, 1, 2, -1, -1, -2, 
+                         1.5, -4, 1, 2, -1, -1, -1)
+      }else{
+        base_values <- c(-1.5, 1, 1, 1, 1, 1, 1, 
+                         -3, 2, 3, 1, 2, 2, 2, 
+                         3, 3, 1, 2, -1, -1, -4, 
+                         2.5, 4, 1, 2, -1, -1, -3, 
+                         2, 5, 1, 2, -1, -1, -2, 
+                         1.5, 6, 1, 2, -1, -1, -1)
+      }
+
       # Create an empty matrix of dimensions J x n_covars
       gamma_mat <- matrix(0, nrow = J, ncol = num_covars)
       
@@ -281,44 +291,25 @@ generateData <- function(r, J, n, overlap.setting, gamma.setting, outcome.type, 
                           nrow = 3, ncol = 7, byrow=TRUE)
     }
 
-  } else if(gamma.setting == "li"){ # values in li and li
-    if(J==6){
-      base_values <- c(-1.5, 1, 1, 1, 1, 1, 1, 
-                                 -4, 2, 3, 1, 2, 2, 2, 
-                                 4, 3, 1, 2, -1, -1, -4, 
-                                 1, 4, 1, 2, -1, -1, -3, 
-                                 3.5, 5, 1, 2, -1, -1, -2, 
-                                 3.5, 6, 1, 2, -1, -1, -1)
-      # Create an empty matrix of dimensions J x n_covars
-      gamma_mat <- matrix(0, nrow = J, ncol = num_covars)
-      
-      # Populate the gamma_mat by repeating the pattern for each group
-      for (j in 1:J) {
-        start_idx <- (j - 1) * 7 + 1
-        end_idx <- j * 7
-        row_pattern <- base_values[start_idx:end_idx]
-        
-        # Repeat or truncate the pattern to fit n_covars
-        repeated_values <- rep_len(row_pattern, num_covars)
-        
-        # Assign to the j-th row of gamma_mat
-        gamma_mat[j, ] <- repeated_values
-      }
-    } else if(J==3){
-      gamma_mat <- matrix(data=c(-1.5, 1, 1, 1, 1, 1, 1, 
-                                 -4, 2, 3, 1, 2, 2, 2, 
-                                 3, 3, 1, 2, -1, -1, -1),
-                          nrow = 3, ncol = 7, byrow=TRUE)
-    }
-
   }else if(gamma.setting == "low"){ # 
     if(J==6){
-      base_values <- c(-4, 1, -2, -1, 1, 1, 1, 
-                                 -6, 1, -2, -1, 1, 1, 1, 
-                                 -2, 1, -1, -1, -1, -1, -4, 
-                                  1, 2, 1, 2, -1, -1, -3, 
-                                 -2, 2, -1, 1, -2, -1, -3, 
-                                 -3, 3, -1, 1, -2, -1, -2)
+      
+      if(covars100){
+        base_values <- c(-4, 1, -2, -1, 1, 1, 1, 
+                         -6, 1, -2, -1, 1, 1, 1, 
+                         -2, 1, -1, -1, -1, -1, -4, 
+                         1, 2, 1, 2, -1, -1, -3, 
+                         -2, 2, -1, 1, -2, -1, -3, 
+                         -3, -2, -1, 1, -2, -1, -2)
+      }else{
+        base_values <- c(-4, 1, -2, -1, 1, 1, 1, 
+                         -6, 1, -2, -1, 1, 1, 1, 
+                         -2, 1, -1, -1, -1, -1, -4, 
+                         1, 2, 1, 2, -1, -1, -3, 
+                         -2, 2, -1, 1, -2, -1, -3, 
+                         -3, 3, -1, 1, -2, -1, -2)
+      }
+
       # Create an empty matrix of dimensions J x n_covars
       gamma_mat <- matrix(0, nrow = J, ncol = num_covars)
       

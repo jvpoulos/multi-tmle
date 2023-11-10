@@ -143,6 +143,59 @@ truncated_rt <- function(n, df, min_val, max_val) {
   return(result[1:n])
 }
 
+truncated_rhyper <- function(n, m, N, k, lower = -Inf, upper = Inf) {
+  result <- numeric(0)  # Initialize result vector
+  while (length(result) < n) {
+    samples <- rhyper(n * 2, m, N, k)  # Generate more samples than needed
+    valid_samples <- samples[samples >= lower & samples <= upper]
+    result <- c(result, valid_samples)
+  }
+  return(result[1:n])  # Return only the first n samples
+}
+
+truncated_rnorm <- function(n, mean = 0, sd = 1, lower = -Inf, upper = Inf) {
+  result <- numeric(n)  # Initialize result vector
+  for (i in 1:n) {
+    repeat {
+      sample <- rnorm(1, mean, sd)
+      if (sample >= lower && sample <= upper) {
+        result[i] <- sample
+        break
+      }
+    }
+  }
+  return(result)
+}
+
+truncated_rgamma <- function(n, shape, scale, lower = -Inf, upper = Inf) {
+  result <- numeric(n)  # Initialize result vector
+  for (i in 1:n) {
+    repeat {
+      sample <- rgamma(1, shape, scale)
+      if (sample >= lower && sample <= upper) {
+        result[i] <- sample
+        break
+      }
+    }
+  }
+  return(result)
+}
+
+
+truncated_rlogis <- function(n, location = 0, scale = 1, lower = -Inf, upper = Inf) {
+  result <- numeric(n)  # Initialize result vector
+  for (i in 1:n) {
+    repeat {
+      sample <- rlogis(1, location, scale)
+      if (sample >= lower && sample <= upper) {
+        result[i] <- sample
+        break
+      }
+    }
+  }
+  return(result)
+}
+
 # function to bound probabilities to be used when making predictions
 boundProbs <- function(x,bounds=c(0.001,0.999)){
   x[x>max(bounds)] <- max(bounds)
