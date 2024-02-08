@@ -6,15 +6,12 @@ N.b.: We cannot provide the actual Centers for Medicare & Medicaid Services (CMS
 Please cite these two papers if you use the code or data in this repo:
 
 ```
-@misc{https://doi.org/10.48550/arxiv.2206.15367,
-  doi = {10.48550/ARXIV.2206.15367},
-  url = {https://arxiv.org/abs/2206.15367},
-  author = {Poulos, Jason and Horvitz-Lennon, Marcela and Zelevinsky, Katya and Cristea-Platon, Tudor and Huijskens, Thomas and Tyagi, Pooja and Yan, Jiaju and Diaz, Jordi and Normand, Sharon-Lise},
-  keywords = {Applications (stat.AP), Methodology (stat.ME), FOS: Computer and information sciences, FOS: Computer and information sciences},
-  title = {Targeted learning in observational studies with multi-level treatments: An evaluation of antipsychotic drug treatment safety},
-  publisher = {arXiv},
-  year = {2022},
-  copyright = {arXiv.org perpetual, non-exclusive license}
+@article{https://doi.org/10.1002/sim.10003,
+  title={Targeted learning in observational studies with multi-valued treatments: An evaluation of antipsychotic drug treatment safety.},
+  author={Poulos, Jason and Horvitz-Lennon, Marcela and Zelevinsky, Katya and Cristea-Platon, Tudor and Huijskens, Thomas and Tyagi, Pooja and Yan, Jiaju and Diaz, Jordi and Normand, Sharon-Lise},
+  journal={Statistics in Medicine},
+  year={2024},
+   publisher={Wiley Online Library}
 }
 ```
 
